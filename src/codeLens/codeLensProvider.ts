@@ -10,7 +10,7 @@ export class PythonCodeLensProvider implements vscode.CodeLensProvider {
     Logger.log('PythonCodeLensProvider initialized');
   }
 
-  private getModulePath(filePath: string): string {
+  protected getModulePath(filePath: string): string {
     Logger.log(`Analyzing module path for file: ${filePath}`);
 
     // Remove file extension
