@@ -1,6 +1,7 @@
 {
   "name": "prodwatch",
-  "displayName": "prodwatch",
+  "displayName": "ProdWatch",
+  "publisher": "ProdWatch",
   "description": "See function calls in production from your editor.",
   "version": "0.0.1",
   "engines": {
@@ -9,7 +10,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -17,7 +20,17 @@
         "command": "prodwatch.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "ProdWatch CodeLens",
+      "properties": {
+        "pythonCodeLens.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable CodeLens for Python functions"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -37,5 +50,8 @@
     "typescript": "^5.7.3",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
   }
 }
