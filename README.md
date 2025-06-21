@@ -1,71 +1,65 @@
-# prodwatch README
+# ProdWatch VS Code Extension
 
-This is the README for your extension "prodwatch". After writing up a brief description, we recommend including the following sections.
+See function calls in production from your editor.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Login to ProdWatch**: Authenticate with your ProdWatch account
 
-For example if there is an image subfolder under your extension project workspace:
+## Getting Started
 
-\!\[feature X\]\(images/feature-x.png\)
+### 1. Install the Extension
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Install the ProdWatch extension from the VS Code marketplace.
 
-## Requirements
+### 2. Configure API URL (Optional)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+By default, the extension connects to `https://getprodwatch.com`. To use a local development server:
 
-## Extension Settings
+1. Open VS Code Settings (`Cmd+,` on Mac, `Ctrl+,` on Windows/Linux)
+2. Search for "prodwatch"
+3. Set **ProdWatch: Api Url** to `http://localhost:8000`
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Alternatively, add this to your `settings.json`:
 
-For example:
+```json
+{
+  "prodwatch.apiUrl": "http://localhost:8000"
+}
+```
 
-This extension contributes the following settings:
+### 3. Login
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+1. Open the Command Palette (`Cmd+Shift+P` on Mac, `Ctrl+Shift+P` on Windows/Linux)
+2. Type "ProdWatch: Login"
+3. Enter your username and password
 
-## Known Issues
+## Configuration
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `prodwatch.apiUrl` | `https://getprodwatch.com` | Base URL for ProdWatch API |
 
-## Release Notes
+## Commands
 
-Users appreciate release notes as you update your extension.
+| Command | Description |
+|---------|-------------|
+| `ProdWatch: Login` | Authenticate with your ProdWatch account |
 
-### 1.0.0
+## Development
 
-Initial release of ...
+### Local Development Setup
 
-### 1.0.1
+To use the extension with a local ProdWatch server:
 
-Fixed issue #.
+1. Set the API URL to localhost:
+   ```json
+   {
+     "prodwatch.apiUrl": "http://localhost:8000"
+   }
+   ```
 
-### 1.1.0
+2. Make sure your local server is running on port 8000
 
-Added features X, Y, and Z.
+3. Use the login command to authenticate
 
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

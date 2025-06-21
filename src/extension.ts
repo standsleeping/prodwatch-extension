@@ -3,6 +3,8 @@
 import * as vscode from 'vscode';
 import { PythonCodeLensProvider } from './codeLens/codeLensProvider';
 import Logger from './utils/logger';
+import { AuthService } from './auth/authService';
+import { ApiService } from './api/apiService';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -11,17 +13,54 @@ export function activate(context: vscode.ExtensionContext) {
   Logger.initialize();
   Logger.log('ProdWatch extension activated');
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand('prodwatch.helloWorld', () => {
-    Logger.log('Hello World command executed');
-    // The code you place here will be executed every time your command is executed
-    // Display a message box to the user
-    vscode.window.showInformationMessage('Hello from prodwatch!');
+  // Initialize services
+  const authService = AuthService.getInstance(context);
+  const apiService = ApiService.getInstance(context);
+
+  // Configure API service
+  const config = vscode.workspace.getConfiguration('prodwatch');
+  const baseUrl = config.get<string>('apiUrl', 'https://getprodwatch.com');
+  
+  apiService.configure({
+    baseUrl: baseUrl
   });
 
-  context.subscriptions.push(disposable);
+  // Register commands
+  const loginCommand = vscode.commands.registerCommand('prodwatch.login', async () => {
+    const username = await vscode.window.showInputBox({
+      placeHolder: 'Username',
+      prompt: 'Enter your username'
+    });
+
+    if (!username) return;
+
+    const password = await vscode.window.showInputBox({
+      placeHolder: 'Password',
+      prompt: 'Enter your password',
+      password: true
+    });
+
+    if (!password) return;
+
+    vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: 'Logging in...',
+      cancellable: false
+    }, async (progress) => {
+      const success = await apiService.login(username, password);
+
+      if (success) {
+        vscode.window.showInformationMessage(`Logged in successfully as ${username}`);
+      } else {
+        vscode.window.showErrorMessage('Login failed. Please check your credentials and try again.');
+      }
+    });
+  });
+
+  // Register commands with extension context
+  context.subscriptions.push(
+    loginCommand
+  );
 
   // Register the CodeLens provider for Python files
   const codeLensProvider = new PythonCodeLensProvider();
@@ -34,4 +73,6 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {
+  Logger.log('ProdWatch extension deactivated');
+}

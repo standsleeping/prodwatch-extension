@@ -17,17 +17,17 @@
   "contributes": {
     "commands": [
       {
-        "command": "prodwatch.helloWorld",
-        "title": "Hello World"
+        "command": "prodwatch.login",
+        "title": "ProdWatch: Login"
       }
     ],
     "configuration": {
-      "title": "ProdWatch CodeLens",
+      "title": "ProdWatch",
       "properties": {
-        "pythonCodeLens.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable CodeLens for Python functions"
+        "prodwatch.apiUrl": {
+          "type": "string",
+          "default": "https://getprodwatch.com",
+          "description": "Base URL for ProdWatch API (use http://localhost:8000 for local development)"
         }
       }
     }
