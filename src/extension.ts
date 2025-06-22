@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { PythonCodeLensProvider } from './codeLens/codeLensProvider';
+import { FunctionHoverProvider } from './hover/functionHoverProvider';
+import { FunctionDataService } from './data/functionDataService';
 import Logger from './utils/logger';
 import { AuthService } from './auth/authService';
 import { ApiService } from './api/apiService';
@@ -16,6 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize services
   const authService = AuthService.getInstance(context);
   const apiService = ApiService.getInstance(context);
+  const functionDataService = FunctionDataService.getInstance(context);
 
   // Configure API service
   const config = vscode.workspace.getConfiguration('prodwatch');
@@ -68,6 +71,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCodeLensProvider(
       { language: 'python', scheme: 'file' },
       codeLensProvider
+    )
+  );
+
+  // Register the Hover provider for Python files
+  const hoverProvider = new FunctionHoverProvider(context, functionDataService);
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(
+      { language: 'python', scheme: 'file' },
+      hoverProvider
     )
   );
 }
