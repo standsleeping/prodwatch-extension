@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import { PythonCodeLensProvider } from '../../codeLens/codeLensProvider';
+import { FunctionDataService } from '../../data/functionDataService';
 import Logger from '../../utils/logger';
 
 
@@ -23,7 +24,9 @@ suite('PythonCodeLensProvider Tests', () => {
   });
 
   setup(() => {
-    provider = new TestableCodeLensProvider();
+    // Create a mock FunctionDataService for testing
+    const mockFunctionDataService = {} as FunctionDataService;
+    provider = new TestableCodeLensProvider(mockFunctionDataService);
   });
 
   suite('getModulePath', () => {

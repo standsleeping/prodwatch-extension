@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
+import { FunctionDataService } from '../data/functionDataService';
 
 export class PythonCodeLensProvider implements vscode.CodeLensProvider {
   private regex: RegExp;
 
-  constructor() {
+  constructor(private functionDataService: FunctionDataService) {
     // Match Python function definitions
     this.regex = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
     Logger.log('PythonCodeLensProvider initialized');
@@ -62,10 +63,23 @@ export class PythonCodeLensProvider implements vscode.CodeLensProvider {
         new vscode.Position(line, matches[0].length)
       );
 
-      codeLenses.push(new vscode.CodeLens(range, {
-        title: `${modulePath}.${functionName}`,
-        command: ''
-      }));
+      // Check if we have function data for this function
+      const codeLensPath = `${modulePath}.${functionName}`;
+      const functionData = this.functionDataService.getFunctionData(codeLensPath);
+
+      // Only add CodeLens if we have data with calls
+      if (functionData) {
+        // Extract total calls from the first data point (format: "Total calls: X")
+        const totalCallsMatch = functionData.dataPoints[0]?.match(/Total calls: (\d+)/);
+        const totalCalls = totalCallsMatch ? parseInt(totalCallsMatch[1]) : 0;
+
+        if (totalCalls > 0) {
+          codeLenses.push(new vscode.CodeLens(range, {
+            title: `${totalCalls} calls`,
+            command: ''
+          }));
+        }
+      }
     }
 
     Logger.log(`Total functions found: ${functionCount}`);

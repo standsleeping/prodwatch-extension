@@ -56,10 +56,10 @@ export class FunctionHoverProvider implements vscode.HoverProvider {
 
             // Create hover content with real or placeholder data
             const hoverContent = new vscode.MarkdownString();
-            hoverContent.appendMarkdown('**Function Data:**\n\n');
+            hoverContent.appendMarkdown('**Function Calls**\n\n');
 
             dataPoints.forEach(point => {
-                hoverContent.appendMarkdown(`• ${point}\n`);
+                hoverContent.appendMarkdown(`• ${point}\n\n`);
             });
 
             return new vscode.Hover(hoverContent);

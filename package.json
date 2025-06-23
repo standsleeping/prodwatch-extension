@@ -19,6 +19,10 @@
       {
         "command": "prodwatch.login",
         "title": "ProdWatch: Login"
+      },
+      {
+        "command": "prodwatch.refreshData",
+        "title": "ProdWatch: Refresh Function Data"
       }
     ],
     "configuration": {
