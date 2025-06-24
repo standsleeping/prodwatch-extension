@@ -3,10 +3,22 @@ import { AuthService } from '../auth/authService';
 import Logger from '../utils/logger';
 
 /**
+ * Interface for individual function call record
+ */
+export interface FunctionCall {
+  function_name: string;
+  args?: unknown[];
+  kwargs?: Record<string, unknown>;
+  execution_time_ms?: number;
+  error?: string;
+  timestamp?: string;
+}
+
+/**
  * Interface for individual function call data
  */
 export interface FunctionCallData {
-  calls: any[]; // Array of call details from server
+  calls: FunctionCall[];
   total_calls: number;
 }
 

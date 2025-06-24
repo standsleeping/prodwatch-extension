@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
-import { ServerFunctionResponse, FunctionCallData } from '../api/apiService';
+import { ServerFunctionResponse, FunctionCallData, FunctionCall } from '../api/apiService';
 
 export interface FunctionData {
   codeLensPath: string; // The exact string that shows in CodeLens
   dataPoints: string[];
 }
+
+// Configuration constants
+const DEFAULT_MAX_RECENT_CALLS = 5;
 
 export class FunctionDataService {
   private static instance: FunctionDataService;
@@ -68,17 +71,17 @@ export class FunctionDataService {
 
     // Show actual function calls with their arguments
     if (callData.calls && callData.calls.length > 0) {
-      // Show up to 5 most recent calls
-      const callsToShow = callData.calls.slice(0, 5);
+      // Show up to configured number of most recent calls
+      const callsToShow = callData.calls.slice(0, DEFAULT_MAX_RECENT_CALLS);
 
-      callsToShow.forEach((call: any, index: number) => {
+      callsToShow.forEach((call: FunctionCall, index: number) => {
         try {
           // Build arguments string from args and kwargs
           let argsString = '';
 
           // Add positional arguments
           if (call.args && Array.isArray(call.args)) {
-            argsString = call.args.join(', ');
+            argsString = call.args.map(arg => JSON.stringify(arg)).join(', ');
           }
 
           // Add keyword arguments
@@ -96,7 +99,7 @@ export class FunctionDataService {
 
           // Format the call with execution time
           let callInfo = `${call.function_name}(${argsString})`;
-          if (call.execution_time_ms) {
+          if (call.execution_time_ms !== undefined) {
             callInfo += ` — ${call.execution_time_ms.toFixed(1)}ms`;
           }
 
@@ -107,14 +110,15 @@ export class FunctionDataService {
 
           dataPoints.push(`Call ${index + 1}: ${callInfo}`);
         } catch (error) {
+          Logger.warn(`Error parsing call data for ${call.function_name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           // If there's an error parsing the call data, show a generic message
           dataPoints.push(`Call ${index + 1}: ${call.function_name || functionName}(...)`);
         }
       });
 
       // If there are more calls than we're showing, indicate that
-      if (callData.calls.length > 5) {
-        dataPoints.push(`(${callData.calls.length - 5} more calls)`);
+      if (callData.calls.length > DEFAULT_MAX_RECENT_CALLS) {
+        dataPoints.push(`(${callData.calls.length - DEFAULT_MAX_RECENT_CALLS} more calls)`);
       }
     }
 
