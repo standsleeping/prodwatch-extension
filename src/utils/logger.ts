@@ -7,6 +7,70 @@ enum LogLevel {
   ERROR = 3
 }
 
+interface LogWriter {
+  appendLine(message: string): void;
+}
+
+const createLogger = (writer: LogWriter, initialLevel: LogLevel = LogLevel.INFO) => {
+  let currentLevel = initialLevel;
+
+  const writeEntries = (entries: string[]) => {
+    entries.forEach(entry => writer.appendLine(entry));
+  };
+
+  return {
+    setLogLevel: (level: LogLevel) => {
+      currentLevel = level;
+    },
+    debug: (message: string) => {
+      const entries = createLogEntry(LogLevel.DEBUG, 'DEBUG', message, currentLevel);
+      writeEntries(entries);
+    },
+    info: (message: string) => {
+      const entries = createLogEntry(LogLevel.INFO, 'INFO', message, currentLevel);
+      writeEntries(entries);
+    },
+    warn: (message: string) => {
+      const entries = createLogEntry(LogLevel.WARN, 'WARN', message, currentLevel);
+      writeEntries(entries);
+    },
+    error: (message: string, error?: Error) => {
+      const entries = createLogEntry(LogLevel.ERROR, 'ERROR', message, currentLevel, error);
+      writeEntries(entries);
+    },
+    log: (message: string) => {
+      const entries = createLogEntry(LogLevel.INFO, 'INFO', message, currentLevel);
+      writeEntries(entries);
+    }
+  };
+};
+
+const formatLogMessage = (level: string, message: string, timestamp: Date = new Date()): string => {
+  return `[${timestamp.toISOString()}] [${level}] ${message}`;
+};
+
+const shouldLog = (messageLevel: LogLevel, currentLevel: LogLevel): boolean => {
+  return messageLevel >= currentLevel;
+};
+
+const formatErrorMessage = (message: string, error?: Error): string => {
+  return error ? `${message} - ${error.message}` : message;
+};
+
+const createLogEntry = (level: LogLevel, levelName: string, message: string, currentLevel: LogLevel, error?: Error): string[] => {
+  if (!shouldLog(level, currentLevel)) {
+    return [];
+  }
+
+  const entries = [formatLogMessage(levelName, formatErrorMessage(message, error))];
+
+  if (error && error.stack) {
+    entries.push(formatLogMessage(levelName, `Stack trace: ${error.stack}`));
+  }
+
+  return entries;
+};
+
 class Logger {
   private static outputChannel: vscode.OutputChannel;
   private static currentLogLevel: LogLevel = LogLevel.INFO;
@@ -19,14 +83,10 @@ class Logger {
     this.currentLogLevel = level;
   }
 
-  private static formatMessage(level: string, message: string): string {
-    const timestamp = new Date().toISOString();
-    return `[${timestamp}] [${level}] ${message}`;
-  }
-
-  private static writeLog(level: LogLevel, levelName: string, message: string) {
-    if (level >= this.currentLogLevel && this.outputChannel) {
-      this.outputChannel.appendLine(this.formatMessage(levelName, message));
+  private static writeLog(level: LogLevel, levelName: string, message: string, error?: Error) {
+    if (this.outputChannel) {
+      const entries = createLogEntry(level, levelName, message, this.currentLogLevel, error);
+      entries.forEach(entry => this.outputChannel.appendLine(entry));
     }
   }
 
@@ -47,13 +107,7 @@ class Logger {
   }
 
   static error(message: string, error?: Error) {
-    const errorDetails = error ? ` - ${error.message}` : '';
-    this.writeLog(LogLevel.ERROR, 'ERROR', `${message}${errorDetails}`);
-    
-    // Also log stack trace for errors if available
-    if (error && error.stack) {
-      this.writeLog(LogLevel.ERROR, 'ERROR', `Stack trace: ${error.stack}`);
-    }
+    this.writeLog(LogLevel.ERROR, 'ERROR', message, error);
   }
 
   static show() {
@@ -70,4 +124,4 @@ class Logger {
 }
 
 export default Logger;
-export { LogLevel }; 
+export { LogLevel, LogWriter, createLogger, formatLogMessage, shouldLog, formatErrorMessage, createLogEntry }; 
