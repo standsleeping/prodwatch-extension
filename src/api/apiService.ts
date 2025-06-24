@@ -83,7 +83,7 @@ export class ApiService {
 
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      Logger.error('Login error', error instanceof Error ? error : new Error(String(error)));
       vscode.window.showErrorMessage(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -139,8 +139,7 @@ export class ApiService {
 
       return data;
     } catch (error) {
-      Logger.log(`Error searching function calls: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      console.error('Function call search error:', error);
+      Logger.error('Error searching function calls', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }

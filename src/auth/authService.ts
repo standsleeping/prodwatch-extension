@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import Logger from '../utils/logger';
 
 /**
  * Service for handling authentication credentials in the extension
@@ -33,7 +34,7 @@ export class AuthService {
       await this.extensionContext.secrets.store(this.TOKEN_KEY, token);
       await this.extensionContext.globalState.update(this.USER_KEY, username);
     } catch (error) {
-      console.error('Failed to store credentials:', error);
+      Logger.error('Failed to store credentials', error instanceof Error ? error : new Error(String(error)));
       throw new Error('Failed to securely store credentials');
     }
   }
@@ -45,7 +46,7 @@ export class AuthService {
     try {
       return await this.extensionContext.secrets.get(this.TOKEN_KEY);
     } catch (error) {
-      console.error('Failed to retrieve token:', error);
+      Logger.error('Failed to retrieve token', error instanceof Error ? error : new Error(String(error)));
       return undefined;
     }
   }
@@ -57,7 +58,7 @@ export class AuthService {
     try {
       return this.extensionContext.globalState.get(this.USER_KEY);
     } catch (error) {
-      console.error('Failed to retrieve username:', error);
+      Logger.error('Failed to retrieve username', error instanceof Error ? error : new Error(String(error)));
       return undefined;
     }
   }
@@ -78,7 +79,7 @@ export class AuthService {
       await this.extensionContext.secrets.delete(this.TOKEN_KEY);
       await this.extensionContext.globalState.update(this.USER_KEY, undefined);
     } catch (error) {
-      console.error('Failed to clear credentials:', error);
+      Logger.error('Failed to clear credentials', error instanceof Error ? error : new Error(String(error)));
       throw new Error('Failed to clear credentials');
     }
   }
