@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+This project follows a strict set of architecture principles.
+
+Please refer to the RULES.md file at the project root for development rules and conventions.
