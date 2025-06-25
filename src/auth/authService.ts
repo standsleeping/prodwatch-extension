@@ -1,24 +1,41 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
+import { AuthState } from './authCore';
+import { CredentialStorage, SecureStorage, GeneralStorage } from './storage';
+import { AuthKeys, storeCredentialsOperation, getCredentialsOperation, getAuthStateOperation, clearCredentialsOperation } from './authOperations';
+
+/**
+ * VS Code specific storage adapter
+ */
+const createVSCodeStorage = (context: vscode.ExtensionContext): CredentialStorage => ({
+  secrets: {
+    get: (key: string) => context.secrets.get(key),
+    store: (key: string, value: string) => context.secrets.store(key, value),
+    delete: (key: string) => context.secrets.delete(key)
+  } as SecureStorage,
+  globalState: {
+    get: <T>(key: string) => context.globalState.get<T>(key),
+    update: (key: string, value: any) => context.globalState.update(key, value)
+  } as GeneralStorage
+});
 
 /**
  * Service for handling authentication credentials in the extension
+ * Now uses functional core with imperative shell pattern
  */
 export class AuthService {
   private static instance: AuthService;
-  private extensionContext: vscode.ExtensionContext;
-
-  // Credential keys
-  private readonly TOKEN_KEY = 'prodwatch.authToken';
-  private readonly USER_KEY = 'prodwatch.username';
+  private storage: CredentialStorage;
+  private keys: AuthKeys;
 
   private constructor(context: vscode.ExtensionContext) {
-    this.extensionContext = context;
+    this.storage = createVSCodeStorage(context);
+    this.keys = {
+      token: 'prodwatch.authToken',
+      username: 'prodwatch.username'
+    };
   }
 
-  /**
-   * Get the singleton instance of AuthService
-   */
   public static getInstance(context: vscode.ExtensionContext): AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService(context);
@@ -26,61 +43,64 @@ export class AuthService {
     return AuthService.instance;
   }
 
-  /**
-   * Store authentication credentials securely
-   */
   public async storeCredentials(username: string, token: string): Promise<void> {
-    try {
-      await this.extensionContext.secrets.store(this.TOKEN_KEY, token);
-      await this.extensionContext.globalState.update(this.USER_KEY, username);
-    } catch (error) {
-      Logger.error('Failed to store credentials', error instanceof Error ? error : new Error(String(error)));
-      throw new Error('Failed to securely store credentials');
+    const result = await storeCredentialsOperation(this.storage, this.keys, { username, token });
+    
+    if (!result.success) {
+      Logger.error('Failed to store credentials', result.error);
+      throw result.error;
     }
   }
 
-  /**
-   * Retrieve stored authentication token
-   */
   public async getToken(): Promise<string | undefined> {
-    try {
-      return await this.extensionContext.secrets.get(this.TOKEN_KEY);
-    } catch (error) {
-      Logger.error('Failed to retrieve token', error instanceof Error ? error : new Error(String(error)));
+    const result = await getCredentialsOperation(this.storage, this.keys);
+    
+    if (!result.success) {
+      Logger.error('Failed to retrieve credentials', result.error);
       return undefined;
     }
+    
+    return result.data.token;
   }
 
-  /**
-   * Retrieve stored username
-   */
   public getUsername(): string | undefined {
+    // This could be made async in the future if needed
     try {
-      return this.extensionContext.globalState.get(this.USER_KEY);
+      return this.storage.globalState.get<string>(this.keys.username);
     } catch (error) {
       Logger.error('Failed to retrieve username', error instanceof Error ? error : new Error(String(error)));
       return undefined;
     }
   }
 
-  /**
-   * Check if user is authenticated
-   */
   public async isAuthenticated(): Promise<boolean> {
-    const token = await this.getToken();
-    return !!token;
+    const result = await getAuthStateOperation(this.storage, this.keys);
+    
+    if (!result.success) {
+      Logger.error('Failed to check authentication state', result.error);
+      return false;
+    }
+    
+    return result.data.isAuthenticated;
   }
 
-  /**
-   * Clear stored credentials
-   */
+  public async getAuthState(): Promise<AuthState> {
+    const result = await getAuthStateOperation(this.storage, this.keys);
+    
+    if (!result.success) {
+      Logger.error('Failed to get auth state', result.error);
+      return { isAuthenticated: false };
+    }
+    
+    return result.data;
+  }
+
   public async clearCredentials(): Promise<void> {
-    try {
-      await this.extensionContext.secrets.delete(this.TOKEN_KEY);
-      await this.extensionContext.globalState.update(this.USER_KEY, undefined);
-    } catch (error) {
-      Logger.error('Failed to clear credentials', error instanceof Error ? error : new Error(String(error)));
-      throw new Error('Failed to clear credentials');
+    const result = await clearCredentialsOperation(this.storage, this.keys);
+    
+    if (!result.success) {
+      Logger.error('Failed to clear credentials', result.error);
+      throw result.error;
     }
   }
 }
