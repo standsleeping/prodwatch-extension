@@ -1,72 +1,16 @@
-/**
- * Integration tests for ApiService
- * Following functional architecture patterns from RULES.md
- * Test structure mirrors class methods exactly
- */
-
 import { strict as assert } from 'assert';
 import * as vscode from 'vscode';
 import { ApiService } from '../../api/apiService';
+import { MockExtensionContext } from '../mocks';
 
-// Mock VS Code extension context
-const createMockContext = (): vscode.ExtensionContext => {
-  const secrets = new Map<string, string>();
-  const globalState = new Map<string, any>();
-
-  return {
-    secrets: {
-      get: async (key: string) => secrets.get(key),
-      store: async (key: string, value: string) => { secrets.set(key, value); },
-      delete: async (key: string) => { secrets.delete(key); },
-      onDidChange: new vscode.EventEmitter<vscode.SecretStorageChangeEvent>().event
-    },
-    globalState: {
-      get: <T>(key: string, defaultValue?: T) => globalState.get(key) ?? defaultValue,
-      update: async (key: string, value: any) => { globalState.set(key, value); },
-      setKeysForSync: () => { },
-      keys: () => Array.from(globalState.keys())
-    },
-    subscriptions: [],
-    extensionUri: vscode.Uri.file('/test'),
-    extensionPath: '/test',
-    asAbsolutePath: (relativePath: string) => `/test/${relativePath}`,
-    storageUri: vscode.Uri.file('/test/storage'),
-    globalStorageUri: vscode.Uri.file('/test/global'),
-    logUri: vscode.Uri.file('/test/log'),
-    storagePath: '/test/storage',
-    globalStoragePath: '/test/global',
-    logPath: '/test/log',
-    extensionMode: vscode.ExtensionMode.Test,
-    extension: {} as vscode.Extension<any>,
-    environmentVariableCollection: {
-      getScoped: () => ({} as vscode.EnvironmentVariableCollection),
-      replace: () => { },
-      append: () => { },
-      prepend: () => { },
-      get: () => undefined,
-      forEach: () => { },
-      delete: () => { },
-      clear: () => { },
-      description: undefined,
-      persistent: true
-    } as any,
-    languageModelAccessInformation: {} as vscode.LanguageModelAccessInformation,
-    workspaceState: {
-      get: <T>(key: string, defaultValue?: T) => defaultValue,
-      update: async () => { },
-      keys: () => []
-    }
-  } as vscode.ExtensionContext;
-};
 
 suite('ApiService', () => {
   let apiService: ApiService;
   let mockContext: vscode.ExtensionContext;
 
   setup(() => {
-    // Reset singleton for each test
     (ApiService as any).instance = undefined;
-    mockContext = createMockContext();
+    mockContext = MockExtensionContext.create();
     apiService = ApiService.getInstance(mockContext);
   });
 
@@ -85,7 +29,7 @@ suite('ApiService', () => {
 
     test('should maintain singleton across different contexts', () => {
       const instance1 = ApiService.getInstance(mockContext);
-      const anotherContext = createMockContext();
+      const anotherContext = MockExtensionContext.create();
       const instance2 = ApiService.getInstance(anotherContext);
       assert.strictEqual(instance1, instance2);
     });

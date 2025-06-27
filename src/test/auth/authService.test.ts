@@ -1,49 +1,15 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { AuthService } from '../../auth/authService';
+import { MockExtensionContext, MockSecretStorage } from '../mocks';
 
 suite('AuthService', () => {
   let testContext: vscode.ExtensionContext;
   let authService: AuthService;
 
   suiteSetup(async () => {
-    // Create a simple in-memory storage for testing
-    const secretStorage = new Map<string, string>();
-    const globalStorage = new Map<string, any>();
-
-    testContext = {
-      subscriptions: [],
-      workspaceState: {
-        get: () => undefined,
-        update: async () => { },
-        keys: () => []
-      } as vscode.Memento,
-      globalState: {
-        get: (key: string) => globalStorage.get(key),
-        update: async (key: string, value: any) => { globalStorage.set(key, value); },
-        keys: () => Array.from(globalStorage.keys()),
-        setKeysForSync: () => { }
-      } as vscode.Memento & { setKeysForSync(keys: readonly string[]): void },
-      secrets: {
-        get: async (key: string) => secretStorage.get(key),
-        store: async (key: string, value: string) => { secretStorage.set(key, value); },
-        delete: async (key: string) => { secretStorage.delete(key); return; },
-        onDidChange: new vscode.EventEmitter<vscode.SecretStorageChangeEvent>().event
-      } as vscode.SecretStorage,
-      extensionUri: vscode.Uri.file(__dirname),
-      extensionPath: __dirname,
-      storagePath: __dirname,
-      globalStoragePath: __dirname,
-      logPath: __dirname,
-      environmentVariableCollection: {} as any,
-      asAbsolutePath: (path: string) => path,
-      storageUri: undefined,
-      globalStorageUri: vscode.Uri.file(__dirname),
-      logUri: vscode.Uri.file(__dirname),
-      extensionMode: vscode.ExtensionMode.Test,
-      extension: {} as any,
-      languageModelAccessInformation: {} as any
-    };
+    const secretStorage = MockSecretStorage.create();
+    testContext = MockExtensionContext.createWithSecrets(secretStorage);
   });
 
   setup(() => {

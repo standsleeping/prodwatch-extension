@@ -3,54 +3,21 @@ import { suite, test } from 'mocha';
 import * as vscode from 'vscode';
 import { FunctionDataService } from '../../data/functionDataService';
 import { ServerFunctionResponse } from '../../api/apiService';
+import { MockExtensionContext } from '../mocks';
 
-// Mock VS Code extension context
-const createMockContext = (): vscode.ExtensionContext => {
-  return {
-    subscriptions: [],
-    workspaceState: {
-      get: () => undefined,
-      update: () => Promise.resolve(),
-      keys: () => []
-    },
-    globalState: {
-      get: () => undefined,
-      update: () => Promise.resolve(),
-      setKeysForSync: () => { },
-      keys: () => []
-    },
-    extensionPath: '/test/path',
-    extensionUri: vscode.Uri.file('/test/path'),
-    environmentVariableCollection: {} as any,
-    asAbsolutePath: (path: string) => `/test/path/${path}`,
-    storageUri: vscode.Uri.file('/test/storage'),
-    storagePath: '/test/storage',
-    globalStorageUri: vscode.Uri.file('/test/global-storage'),
-    globalStoragePath: '/test/global-storage',
-    logUri: vscode.Uri.file('/test/log'),
-    logPath: '/test/log',
-    extensionMode: vscode.ExtensionMode.Test,
-    secrets: {} as any,
-    extension: {} as any,
-    languageModelAccessInformation: {} as any
-  };
-};
 
 suite('FunctionDataService', () => {
   let context: vscode.ExtensionContext;
   let service: FunctionDataService;
 
-  // Setup test environment
   suiteSetup(() => {
-    context = createMockContext();
+    context = MockExtensionContext.create();
     service = FunctionDataService.getInstance(context);
   });
 
-  // Reset singleton between tests to ensure isolation
   setup(() => {
-    // Reset the singleton instance by accessing private static field
     (FunctionDataService as any).instance = undefined;
-    context = createMockContext();
+    context = MockExtensionContext.create();
     service = FunctionDataService.getInstance(context);
   });
 

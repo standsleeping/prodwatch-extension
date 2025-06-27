@@ -7,20 +7,27 @@ import * as vscode from 'vscode';
 export class MockExtensionContext implements vscode.ExtensionContext {
   subscriptions: vscode.Disposable[] = [];
 
-  workspaceState: vscode.Memento = {
-    get: () => undefined,
-    update: () => Promise.resolve(),
-    keys: () => []
-  };
+  workspaceState: vscode.Memento;
+  globalState: vscode.Memento & { setKeysForSync(keys: readonly string[]): void };
 
-  globalState: vscode.Memento & { setKeysForSync(keys: readonly string[]): void } = {
-    get: () => undefined,
-    update: () => Promise.resolve(),
-    keys: () => [],
-    setKeysForSync: () => { }
-  };
+  constructor() {
+    const workspaceStorage = new Map<string, any>();
+    this.workspaceState = {
+      get: <T>(key: string, defaultValue?: T) => workspaceStorage.get(key) ?? defaultValue,
+      update: async (key: string, value: any) => { workspaceStorage.set(key, value); },
+      keys: () => Array.from(workspaceStorage.keys())
+    };
 
-  secrets: vscode.SecretStorage = {} as vscode.SecretStorage;
+    const globalStorage = new Map<string, any>();
+    this.globalState = {
+      get: <T>(key: string, defaultValue?: T) => globalStorage.get(key) ?? defaultValue,
+      update: async (key: string, value: any) => { globalStorage.set(key, value); },
+      keys: () => Array.from(globalStorage.keys()),
+      setKeysForSync: () => { }
+    };
+  }
+
+  secrets: vscode.SecretStorage = MockSecretStorage.create();
   extensionUri: vscode.Uri = vscode.Uri.file('/mock/path');
   extensionPath: string = '/mock/path';
   storageUri: vscode.Uri | undefined = vscode.Uri.file('/mock/storage');
@@ -43,14 +50,9 @@ export class MockExtensionContext implements vscode.ExtensionContext {
     return new MockExtensionContext();
   }
 
-  static createWithSecrets(mockSecrets: Partial<vscode.SecretStorage>): MockExtensionContext {
+  static createWithSecrets(secretStorage?: MockSecretStorage): MockExtensionContext {
     const context = new MockExtensionContext();
-    context.secrets = {
-      get: mockSecrets.get || (() => Promise.resolve(undefined)),
-      store: mockSecrets.store || (() => Promise.resolve()),
-      delete: mockSecrets.delete || (() => Promise.resolve()),
-      onDidChange: mockSecrets.onDidChange || (() => ({ dispose: () => { } }))
-    };
+    context.secrets = secretStorage || MockSecretStorage.create();
     return context;
   }
 }
