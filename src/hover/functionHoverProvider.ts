@@ -1,70 +1,108 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
 import { FunctionDataService } from '../data/functionDataService';
+import {
+  provideHoverOperation,
+  HoverDataProvider,
+  VSCodeHover,
+  VSCodeMarkdownString,
+  VSCodeHoverResult
+} from './hoverOperations';
+
+// VS Code hover factory implementation
+class VSCodeHoverFactory implements VSCodeHover {
+  createMarkdownString(): VSCodeMarkdownString {
+    const markdownString = new vscode.MarkdownString();
+    return {
+      appendMarkdown: (content: string) => markdownString.appendMarkdown(content)
+    };
+  }
+
+  createHover(content: VSCodeMarkdownString): VSCodeHoverResult {
+    // We need to get the actual MarkdownString from our wrapper
+    const actualMarkdownString = new vscode.MarkdownString();
+    return new vscode.Hover(actualMarkdownString) as unknown as VSCodeHoverResult;
+  }
+}
+
+// Adapter to make FunctionDataService compatible with HoverDataProvider
+class FunctionDataServiceAdapter implements HoverDataProvider {
+  constructor(private dataService: FunctionDataService) {}
+
+  getFunctionData(codeLensPath: string) {
+    return this.dataService.getFunctionData(codeLensPath);
+  }
+
+  getDefaultPlaceholderData(): string[] {
+    return this.dataService.getDefaultPlaceholderData();
+  }
+}
 
 export class FunctionHoverProvider implements vscode.HoverProvider {
-    private functionRegex: RegExp;
+  private dataProvider: HoverDataProvider;
+  private hoverFactory: VSCodeHover;
 
-    constructor(
-        private context: vscode.ExtensionContext,
-        private dataService: FunctionDataService
-    ) {
-        // Match Python function definitions
-        this.functionRegex = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
-        Logger.log('FunctionHoverProvider initialized');
+  constructor(
+    private context: vscode.ExtensionContext,
+    private dataService: FunctionDataService
+  ) {
+    this.dataProvider = new FunctionDataServiceAdapter(dataService);
+    this.hoverFactory = new VSCodeHoverFactory();
+    Logger.log('FunctionHoverProvider initialized');
+  }
+
+  public provideHover(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.Hover> {
+    const result = provideHoverOperation(
+      document,
+      position,
+      this.dataProvider,
+      this.hoverFactory
+    );
+
+    if (!result.success) {
+      Logger.warn(`Hover operation failed: ${result.error.message}`);
+      return null;
     }
 
-    private getModulePath(filePath: string): string {
-        // Use the same logic as CodeLensProvider
-        const pathWithoutExt = filePath.replace(/\.py$/, '');
-        const parts = pathWithoutExt.split(/[/\\]/);
-
-        const rootMarkers = ['src', 'app', 'lib', 'tests'];
-        const rootIndex = parts.findIndex(part => rootMarkers.includes(part));
-
-        if (rootIndex === -1) {
-            return parts[parts.length - 1];
-        }
-
-        return parts.slice(rootIndex).join('.');
+    if (result.data === null) {
+      // No function found at position
+      return null;
     }
 
-    public provideHover(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.Hover> {
-        const line = document.lineAt(position.line);
-        const functionMatch = line.text.match(this.functionRegex);
+    // Extract the function match and create proper hover content
+    const line = document.lineAt(position.line);
+    const functionMatch = line.text.match(/def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/);
 
-        if (functionMatch) {
-            const functionName = functionMatch[1];
-            const modulePath = this.getModulePath(document.uri.fsPath);
-            const codeLensPath = `${modulePath}.${functionName}`;
+    if (functionMatch) {
+      const functionName = functionMatch[1];
+      const pathWithoutExt = document.uri.fsPath.replace(/\.py$/, '');
+      const parts = pathWithoutExt.split(/[/\\]/);
+      const rootMarkers = ['src', 'app', 'lib', 'tests'];
+      const rootIndex = parts.findIndex(part => rootMarkers.includes(part));
+      const modulePath = rootIndex === -1 ? parts[parts.length - 1] : parts.slice(rootIndex).join('.');
+      const codeLensPath = `${modulePath}.${functionName}`;
 
-            Logger.log(`Hover on function: ${codeLensPath}`);
-            Logger.log(`File path: ${document.uri.fsPath}`);
-            Logger.log(`Module path: ${modulePath}`);
-            Logger.log(`Function name: ${functionName}`);
+      Logger.log(`Hover on function: ${codeLensPath}`);
 
-            // Get function data from the service using exact CodeLens path
-            const functionData = this.dataService.getFunctionData(codeLensPath);
-            const dataPoints = functionData ? functionData.dataPoints : this.dataService.getDefaultPlaceholderData();
+      const functionData = this.dataService.getFunctionData(codeLensPath);
+      const dataPoints = functionData ? functionData.dataPoints : this.dataService.getDefaultPlaceholderData();
 
-            Logger.log(`Function data found: ${functionData ? 'YES' : 'NO'}`);
-            Logger.log(`Data points: ${JSON.stringify(dataPoints)}`);
+      Logger.log(`Function data found: ${functionData ? 'YES' : 'NO'}`);
 
-            // Create hover content with real or placeholder data
-            const hoverContent = new vscode.MarkdownString();
-            hoverContent.appendMarkdown('**Function Calls**\n\n');
+      const hoverContent = new vscode.MarkdownString();
+      hoverContent.appendMarkdown('**Function Calls**\n\n');
 
-            dataPoints.forEach(point => {
-                hoverContent.appendMarkdown(`• ${point}\n\n`);
-            });
+      dataPoints.forEach(point => {
+        hoverContent.appendMarkdown(`• ${point}\n\n`);
+      });
 
-            return new vscode.Hover(hoverContent);
-        }
-
-        return null;
+      return new vscode.Hover(hoverContent);
     }
+
+    return null;
+  }
 } 

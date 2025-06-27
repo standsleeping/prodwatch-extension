@@ -1,20 +1,56 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
-import { ServerFunctionResponse, FunctionCallData, FunctionCall } from '../api/apiService';
+import { ServerFunctionResponse } from '../api/apiService';
+import { FunctionData, DEFAULT_PLACEHOLDER_DATA } from './functionDataCore';
+import {
+  FunctionDataStorage,
+  updateFromServerResponseOperation,
+  getFunctionDataOperation,
+  hasFunctionDataOperation,
+  getAllFunctionPathsOperation,
+  clearAllDataOperation,
+  getFunctionDataWithPlaceholderOperation
+} from './functionDataOperations';
 
-export interface FunctionData {
-  codeLensPath: string; // The exact string that shows in CodeLens
-  dataPoints: string[];
+// Simple Map-based storage implementation
+class MapFunctionDataStorage implements FunctionDataStorage {
+  private storage = new Map<string, FunctionData>();
+
+  get(codeLensPath: string): FunctionData | undefined {
+    return this.storage.get(codeLensPath);
+  }
+
+  set(codeLensPath: string, data: FunctionData): void {
+    this.storage.set(codeLensPath, data);
+  }
+
+  has(codeLensPath: string): boolean {
+    return this.storage.has(codeLensPath);
+  }
+
+  delete(codeLensPath: string): boolean {
+    return this.storage.delete(codeLensPath);
+  }
+
+  clear(): void {
+    this.storage.clear();
+  }
+
+  keys(): string[] {
+    return Array.from(this.storage.keys());
+  }
+
+  size(): number {
+    return this.storage.size;
+  }
 }
-
-// Configuration constants
-const DEFAULT_MAX_RECENT_CALLS = 5;
 
 export class FunctionDataService {
   private static instance: FunctionDataService;
-  private functionDataMap: Map<string, FunctionData> = new Map();
+  private storage: FunctionDataStorage;
 
   private constructor(private context: vscode.ExtensionContext) {
+    this.storage = new MapFunctionDataStorage();
     this.initializeData();
   }
 
@@ -31,142 +67,83 @@ export class FunctionDataService {
   }
 
   public getFunctionData(codeLensPath: string): FunctionData | null {
-    const data = this.functionDataMap.get(codeLensPath);
+    const result = getFunctionDataOperation(this.storage, codeLensPath);
 
-    if (data) {
-      Logger.log(`Found function data for: ${codeLensPath}`);
-      return data;
+    if (result.success) {
+      if (result.data) {
+        Logger.log(`Found function data for: ${codeLensPath}`);
+        return result.data;
+      } else {
+        Logger.log(`No function data found for: ${codeLensPath}`);
+        return null;
+      }
+    } else {
+      Logger.warn(`Error getting function data for ${codeLensPath}: ${result.error.message}`);
+      return null;
     }
-
-    Logger.log(`No function data found for: ${codeLensPath}`);
-    return null;
   }
 
   public getDefaultPlaceholderData(): string[] {
-    return [
-      'No function call data available'
-    ];
+    return [...DEFAULT_PLACEHOLDER_DATA];
   }
 
-  /**
-   * Convert server function call data to display-friendly data points
-   */
-  private convertToDataPoints(functionName: string, callData: FunctionCallData): string[] {
-    const dataPoints: string[] = [];
-
-    // Add total calls information
-    dataPoints.push(`Total calls: ${callData.total_calls}`);
-
-    // Add information about recent calls if available
-    if (callData.calls && callData.calls.length > 0) {
-      dataPoints.push(`Recent calls tracked: ${callData.calls.length}`);
-
-      // You can add more sophisticated analysis here based on the call data structure
-      // For example, if calls have timestamps, you could show:
-      // - Most recent call time
-      // - Average calls per day
-      // - Peak usage times
-      // etc.
-    }
-
-    // Show actual function calls with their arguments
-    if (callData.calls && callData.calls.length > 0) {
-      // Show up to configured number of most recent calls
-      const callsToShow = callData.calls.slice(0, DEFAULT_MAX_RECENT_CALLS);
-
-      callsToShow.forEach((call: FunctionCall, index: number) => {
-        try {
-          // Build arguments string from args and kwargs
-          let argsString = '';
-
-          // Add positional arguments
-          if (call.args && Array.isArray(call.args)) {
-            argsString = call.args.map(arg => JSON.stringify(arg)).join(', ');
-          }
-
-          // Add keyword arguments
-          if (call.kwargs && Object.keys(call.kwargs).length > 0) {
-            const kwargsString = Object.entries(call.kwargs)
-              .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
-              .join(', ');
-
-            if (argsString) {
-              argsString += ', ' + kwargsString;
-            } else {
-              argsString = kwargsString;
-            }
-          }
-
-          // Format the call with execution time
-          let callInfo = `${call.function_name}(${argsString})`;
-          if (call.execution_time_ms !== undefined) {
-            callInfo += ` — ${call.execution_time_ms.toFixed(1)}ms`;
-          }
-
-          // Add error info if present
-          if (call.error) {
-            callInfo += ` [ERROR: ${call.error}]`;
-          }
-
-          dataPoints.push(`Call ${index + 1}: ${callInfo}`);
-        } catch (error) {
-          Logger.warn(`Error parsing call data for ${call.function_name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          // If there's an error parsing the call data, show a generic message
-          dataPoints.push(`Call ${index + 1}: ${call.function_name || functionName}(...)`);
-        }
-      });
-
-      // If there are more calls than we're showing, indicate that
-      if (callData.calls.length > DEFAULT_MAX_RECENT_CALLS) {
-        dataPoints.push(`(${callData.calls.length - DEFAULT_MAX_RECENT_CALLS} more calls)`);
-      }
-    }
-
-    return dataPoints;
-  }
 
   /**
    * Update function data from server response
    */
   public updateFromServerResponse(modulePath: string, serverResponse: ServerFunctionResponse): void {
-    Logger.log(`Updating function data from server: ${serverResponse.function_names.length} functions, ${serverResponse.total_calls} total calls`);
+    const functionCount = serverResponse?.function_names?.length || 0;
+    const totalCalls = serverResponse?.total_calls || 0;
+    Logger.log(`Updating function data from server: ${functionCount} functions, ${totalCalls} total calls`);
 
-    // Process each function in the response
-    Object.entries(serverResponse.functions).forEach(([functionPath, callData]) => {
-      // Server returns the exact same key that was sent in the request
-      const dataPoints = this.convertToDataPoints(functionPath, callData);
+    const result = updateFromServerResponseOperation(this.storage, modulePath, serverResponse);
 
-      const functionData: FunctionData = {
-        codeLensPath: functionPath,
-        dataPoints: dataPoints
-      };
-
-      this.functionDataMap.set(functionPath, functionData);
-      Logger.log(`Updated function data for: ${functionPath} (${callData.total_calls} calls)`);
-    });
-
-    Logger.log(`Function data map now contains ${this.functionDataMap.size} entries`);
+    if (result.success) {
+      Logger.log(`Successfully updated ${result.data.updatedCount} functions: ${result.data.functionPaths.join(', ')}`);
+      Logger.log(`Function data map now contains ${this.storage.size()} entries`);
+    } else {
+      Logger.error(`Failed to update function data from server response: ${result.error.message}`);
+    }
   }
 
   /**
    * Check if we have data for a specific function
    */
   public hasData(codeLensPath: string): boolean {
-    return this.functionDataMap.has(codeLensPath);
+    const result = hasFunctionDataOperation(this.storage, codeLensPath);
+
+    if (result.success) {
+      return result.data;
+    } else {
+      Logger.warn(`Error checking function data existence for ${codeLensPath}: ${result.error.message}`);
+      return false;
+    }
   }
 
   /**
    * Get all function paths that currently have data
    */
   public getAllFunctionPaths(): string[] {
-    return Array.from(this.functionDataMap.keys());
+    const result = getAllFunctionPathsOperation(this.storage);
+
+    if (result.success) {
+      return result.data;
+    } else {
+      Logger.warn(`Error getting all function paths: ${result.error.message}`);
+      return [];
+    }
   }
 
   /**
    * Clear all stored function data
    */
   public clearAllData(): void {
-    this.functionDataMap.clear();
-    Logger.log('Cleared all function data');
+    const result = clearAllDataOperation(this.storage);
+
+    if (result.success) {
+      Logger.log('Cleared all function data');
+    } else {
+      Logger.error(`Error clearing function data: ${result.error.message}`);
+    }
   }
 } 
