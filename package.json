@@ -3,6 +3,7 @@
   "displayName": "ProdWatch",
   "publisher": "ProdWatch",
   "description": "See function calls in production from your editor.",
+  "repository": "standsleeping/prodwatch-extension",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.97.0"
