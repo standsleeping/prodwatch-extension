@@ -94,11 +94,16 @@ export class FunctionHoverProvider implements vscode.HoverProvider {
       Logger.log(`Function data found: ${functionData ? 'YES' : 'NO'}`);
 
       const hoverContent = new vscode.MarkdownString();
+      hoverContent.isTrusted = true; // Enable command URIs
       hoverContent.appendMarkdown('**Function Calls**\n\n');
 
       dataPoints.forEach(point => {
         hoverContent.appendMarkdown(`• ${point}\n\n`);
       });
+
+      // Add watch button
+      const watchUri = vscode.Uri.parse(`command:prodwatch.watchFunction?${encodeURIComponent(JSON.stringify([functionName, codeLensPath]))}`);
+      hoverContent.appendMarkdown(`\n[Watch Function](${watchUri})\n`);
 
       return new vscode.Hover(hoverContent);
     }

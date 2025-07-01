@@ -8,6 +8,7 @@ import { FileFocusService } from './data/fileFocusService';
 import Logger from './utils/logger';
 import { AuthService } from './auth/authService';
 import { ApiService } from './api/apiService';
+import { CommandsService } from './commands/commandsService';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -40,71 +41,12 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  // Register commands
-  const loginCommand = vscode.commands.registerCommand('prodwatch.login', async () => {
-    const username = await vscode.window.showInputBox({
-      placeHolder: 'Username',
-      prompt: 'Enter your username'
-    });
-
-    if (!username) {return;}
-
-    const password = await vscode.window.showInputBox({
-      placeHolder: 'Password',
-      prompt: 'Enter your password',
-      password: true
-    });
-
-    if (!password) {return;}
-
-    vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'Logging in...',
-      cancellable: false
-    }, async (progress) => {
-      const success = await apiService.login(username, password);
-
-      if (success) {
-        vscode.window.showInformationMessage(`Logged in successfully as ${username}`);
-
-        // After successful login, fetch data for the current file if it's Python
-        if (activeEditor && activeEditor.document.languageId === 'python') {
-          fileFocusService.fetchDataForActiveFile().catch(error => {
-            Logger.log(`Error fetching data after login: ${error}`);
-          });
-        }
-      } else {
-        vscode.window.showErrorMessage('Login failed. Please check your credentials and try again.');
-      }
-    });
-  });
-
-  // Add command to manually refresh function data
-  const refreshDataCommand = vscode.commands.registerCommand('prodwatch.refreshData', async () => {
-    const currentEditor = vscode.window.activeTextEditor;
-    if (currentEditor && currentEditor.document.languageId === 'python') {
-      vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: 'Refreshing function data...',
-        cancellable: false
-      }, async (progress) => {
-        try {
-          await fileFocusService.fetchDataForActiveFile();
-          vscode.window.showInformationMessage('Function data refreshed successfully');
-        } catch (error) {
-          vscode.window.showErrorMessage(`Failed to refresh function data: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      });
-    } else {
-      vscode.window.showWarningMessage('Please open a Python file to refresh function data');
-    }
-  });
-
+  // Initialize commands service and register commands
+  const commandsService = CommandsService.getInstance(context, apiService, fileFocusService);
+  const commandDisposables = commandsService.registerCommands();
+  
   // Register commands with extension context
-  context.subscriptions.push(
-    loginCommand,
-    refreshDataCommand
-  );
+  context.subscriptions.push(...commandDisposables);
 
   // Register the CodeLens provider for Python files
   const codeLensProvider = new PythonCodeLensProvider(functionDataService);
