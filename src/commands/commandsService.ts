@@ -2,19 +2,34 @@ import * as vscode from 'vscode';
 import Logger from '../utils/logger';
 import { ApiService } from '../api/apiService';
 import { FileFocusService } from '../data/fileFocusService';
-import {
-  executeLoginCommandOperation,
-  executeRefreshDataCommandOperation,
-  executeWatchFunctionCommandOperation,
-  ApiServiceProvider,
-  FileFocusServiceProvider,
-  LoggerProvider,
-  VSCodeProvider
-} from './commandsOperations';
-import { COMMAND_NAMES } from './commandsCore';
 
-// VS Code provider implementation
-class VSCodeProviderImpl implements VSCodeProvider {
+// Login command imports
+import { 
+  executeLoginCommandOperation,
+  ApiServiceProvider as LoginApiServiceProvider,
+  VSCodeProvider as LoginVSCodeProvider,
+  FileFocusServiceProvider as LoginFileFocusServiceProvider,
+  LoggerProvider as LoginLoggerProvider
+} from './login/loginOperations';
+import { LOGIN_COMMAND_NAME } from './login/loginCore';
+
+// Refresh data command imports
+import {
+  executeRefreshDataCommandOperation,
+  FileFocusServiceProvider as RefreshDataFileFocusServiceProvider,
+  VSCodeProvider as RefreshDataVSCodeProvider
+} from './refresh-data/refreshDataOperations';
+import { REFRESH_DATA_COMMAND_NAME } from './refresh-data/refreshDataCore';
+
+// Watch function command imports
+import {
+  executeWatchFunctionCommandOperation,
+  LoggerProvider as WatchFunctionLoggerProvider
+} from './watch-function/watchFunctionOperations';
+import { WATCH_FUNCTION_COMMAND_NAME } from './watch-function/watchFunctionCore';
+
+// VS Code provider implementation (implements all command VSCode interfaces)
+class VSCodeProviderImpl implements LoginVSCodeProvider, RefreshDataVSCodeProvider {
   showInputBox(options: vscode.InputBoxOptions): Thenable<string | undefined> {
     return vscode.window.showInputBox(options);
   }
@@ -43,15 +58,15 @@ class VSCodeProviderImpl implements VSCodeProvider {
   }
 }
 
-// Logger provider implementation
-class LoggerProviderImpl implements LoggerProvider {
+// Logger provider implementation (implements all command logger interfaces)
+class LoggerProviderImpl implements LoginLoggerProvider, WatchFunctionLoggerProvider {
   log(message: string): void {
     Logger.log(message);
   }
 }
 
-// API service adapter
-class ApiServiceAdapter implements ApiServiceProvider {
+// API service adapter (implements all command API service interfaces)
+class ApiServiceAdapter implements LoginApiServiceProvider {
   constructor(private apiService: ApiService) {}
 
   async login(username: string, password: string): Promise<boolean> {
@@ -59,8 +74,8 @@ class ApiServiceAdapter implements ApiServiceProvider {
   }
 }
 
-// File focus service adapter
-class FileFocusServiceAdapter implements FileFocusServiceProvider {
+// File focus service adapter (implements all command file focus service interfaces)
+class FileFocusServiceAdapter implements LoginFileFocusServiceProvider, RefreshDataFileFocusServiceProvider {
   constructor(private fileFocusService: FileFocusService) {}
 
   async fetchDataForActiveFile(): Promise<void> {
@@ -70,10 +85,10 @@ class FileFocusServiceAdapter implements FileFocusServiceProvider {
 
 export class CommandsService {
   private static instance: CommandsService;
-  private vscodeProvider: VSCodeProvider;
-  private loggerProvider: LoggerProvider;
-  private apiServiceProvider: ApiServiceProvider;
-  private fileFocusServiceProvider: FileFocusServiceProvider;
+  private vscodeProvider: VSCodeProviderImpl;
+  private loggerProvider: LoggerProviderImpl;
+  private apiServiceProvider: ApiServiceAdapter;
+  private fileFocusServiceProvider: FileFocusServiceAdapter;
 
   private constructor(
     private context: vscode.ExtensionContext,
@@ -102,17 +117,17 @@ export class CommandsService {
    */
   public registerCommands(): vscode.Disposable[] {
     const loginCommand = vscode.commands.registerCommand(
-      COMMAND_NAMES.LOGIN,
+      LOGIN_COMMAND_NAME,
       () => this.executeLoginCommand()
     );
 
     const refreshDataCommand = vscode.commands.registerCommand(
-      COMMAND_NAMES.REFRESH_DATA,
+      REFRESH_DATA_COMMAND_NAME,
       () => this.executeRefreshDataCommand()
     );
 
     const watchFunctionCommand = vscode.commands.registerCommand(
-      COMMAND_NAMES.WATCH_FUNCTION,
+      WATCH_FUNCTION_COMMAND_NAME,
       (functionName: string, codeLensPath: string) => 
         this.executeWatchFunctionCommand(functionName, codeLensPath)
     );
