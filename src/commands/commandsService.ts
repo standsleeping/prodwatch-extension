@@ -158,35 +158,29 @@ export class CommandsService {
   }
 
   /**
-   * Execute login command with progress indication
+   * Execute login command
    */
   private async executeLoginCommand(): Promise<void> {
-    await this.vscodeProvider.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'Logging in...',
-      cancellable: false
-    }, async () => {
-      const result = await executeLoginCommandOperation(
-        this.apiServiceProvider,
-        this.vscodeProvider
-      );
+    const result = await executeLoginCommandOperation(
+      this.apiServiceProvider,
+      this.vscodeProvider
+    );
 
-      if (result.success) {
-        await this.vscodeProvider.showInformationMessage(result.data);
-        
-        // After successful login, fetch data for the current file if it's Python
-        const activeEditor = this.vscodeProvider.getActiveTextEditor();
-        if (activeEditor && activeEditor.document.languageId === 'python') {
-          try {
-            await this.fileFocusServiceProvider.fetchDataForActiveFile();
-          } catch (error) {
-            Logger.log(`Error fetching data after login: ${error}`);
-          }
+    if (result.success) {
+      await this.vscodeProvider.showInformationMessage(result.data);
+      
+      // After successful login, fetch data for the current file if it's Python
+      const activeEditor = this.vscodeProvider.getActiveTextEditor();
+      if (activeEditor && activeEditor.document.languageId === 'python') {
+        try {
+          await this.fileFocusServiceProvider.fetchDataForActiveFile();
+        } catch (error) {
+          Logger.log(`Error fetching data after login: ${error}`);
         }
-      } else {
-        await this.vscodeProvider.showErrorMessage(result.error.message);
       }
-    });
+    } else {
+      await this.vscodeProvider.showErrorMessage(result.error.message);
+    }
   }
 
   /**

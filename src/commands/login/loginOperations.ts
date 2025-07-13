@@ -43,10 +43,11 @@ export interface LoggerProvider {
  */
 
 /**
- * Safely execute login operation
+ * Safely execute login operation with progress indication
  */
 export const loginOperation = async (
   apiService: ApiServiceProvider,
+  vscodeProvider: VSCodeProvider,
   loginContext: LoginContext
 ): Promise<Result<string>> => {
   if (!isValidLoginContext(loginContext)) {
@@ -57,7 +58,14 @@ export const loginOperation = async (
   }
 
   try {
-    const success = await apiService.login(loginContext.username, loginContext.password);
+    // Show progress only during the actual API request
+    const success = await vscodeProvider.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: 'Logging in...',
+      cancellable: false
+    }, async () => {
+      return await apiService.login(loginContext.username, loginContext.password);
+    });
     
     if (!success) {
       return {
@@ -142,7 +150,7 @@ export const executeLoginCommandOperation = async (
     return credentialsResult;
   }
 
-  // Execute login
-  const loginResult = await loginOperation(apiService, credentialsResult.data);
+  // Execute login with progress indication
+  const loginResult = await loginOperation(apiService, vscodeProvider, credentialsResult.data);
   return loginResult;
 };

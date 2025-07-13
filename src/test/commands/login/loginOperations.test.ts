@@ -39,9 +39,10 @@ suite('LoginOperations', () => {
   suite('loginOperation', () => {
     test('should return success for valid credentials', async () => {
       const apiService = createMockApiService(true);
+      const vscodeProvider = createMockVSCodeProvider();
       const loginContext = { username: 'validuser', password: 'validpass' };
 
-      const result = await loginOperation(apiService, loginContext);
+      const result = await loginOperation(apiService, vscodeProvider, loginContext);
 
       assert.strictEqual(result.success, true);
       if (result.success) {
@@ -51,9 +52,10 @@ suite('LoginOperations', () => {
 
     test('should return failure for invalid credentials', async () => {
       const apiService = createMockApiService(false);
+      const vscodeProvider = createMockVSCodeProvider();
       const loginContext = { username: 'invaliduser', password: 'invalidpass' };
 
-      const result = await loginOperation(apiService, loginContext);
+      const result = await loginOperation(apiService, vscodeProvider, loginContext);
 
       assert.strictEqual(result.success, false);
       if (!result.success) {
@@ -63,9 +65,10 @@ suite('LoginOperations', () => {
 
     test('should return validation error for invalid context', async () => {
       const apiService = createMockApiService(true);
+      const vscodeProvider = createMockVSCodeProvider();
       const loginContext = { username: '', password: 'pass' };
 
-      const result = await loginOperation(apiService, loginContext);
+      const result = await loginOperation(apiService, vscodeProvider, loginContext);
 
       assert.strictEqual(result.success, false);
       if (!result.success) {
@@ -79,9 +82,10 @@ suite('LoginOperations', () => {
           throw new Error('Network error');
         }
       };
+      const vscodeProvider = createMockVSCodeProvider();
       const loginContext = { username: 'validuser', password: 'validpass' };
 
-      const result = await loginOperation(apiService, loginContext);
+      const result = await loginOperation(apiService, vscodeProvider, loginContext);
 
       assert.strictEqual(result.success, false);
       if (!result.success) {
