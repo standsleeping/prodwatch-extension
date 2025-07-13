@@ -9,6 +9,7 @@ import {
   isValidServerFunctionResponse,
   normalizeApiConfig,
   isValidFunctionNames,
+  isValidAppName,
   createApiError,
   getErrorMessage,
   isUnauthorizedStatus
@@ -145,7 +146,8 @@ export const searchFunctionCallsOperation = async (
   authStorage: AuthStorage,
   notifications: NotificationService,
   config: ApiConfig,
-  functionNames: unknown
+  functionNames: unknown,
+  appName: unknown
 ): Promise<Result<ServerFunctionResponse | null>> => {
   // Validate function names
   if (!isValidFunctionNames(functionNames)) {
@@ -153,6 +155,15 @@ export const searchFunctionCallsOperation = async (
       success: false,
       error: createApiError('Invalid function names: must be non-empty array of strings'),
       validationErrors: ['Function names must be a non-empty array of strings']
+    };
+  }
+
+  // Validate app name
+  if (!isValidAppName(appName as string)) {
+    return {
+      success: false,
+      error: createApiError('Invalid app name: must be non-empty string'),
+      validationErrors: ['App name must be a non-empty string']
     };
   }
 
@@ -174,7 +185,7 @@ export const searchFunctionCallsOperation = async (
   }
 
   // Create request
-  const searchRequest = createSearchRequest(functionNames);
+  const searchRequest = createSearchRequest(functionNames as string[], appName as string);
 
   // Make HTTP request
   const fetchResult = await safeFetch(httpClient, `${config.baseUrl}/editor-events`, {

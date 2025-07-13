@@ -209,7 +209,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1', 'func2']
+        ['func1', 'func2'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, true);
@@ -230,7 +231,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, true);
@@ -251,7 +253,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, true);
@@ -274,7 +277,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, true);
@@ -294,7 +298,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        [] // Empty array is invalid
+        [], // Empty array is invalid
+        'test-app'
       );
 
       assert.strictEqual(result.success, false);
@@ -318,7 +323,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, false);
@@ -339,7 +345,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, false);
@@ -360,7 +367,8 @@ suite('ApiOperations', () => {
         authStorage,
         notifications,
         defaultConfig,
-        ['func1']
+        ['func1'],
+        'test-app'
       );
 
       assert.strictEqual(result.success, false);

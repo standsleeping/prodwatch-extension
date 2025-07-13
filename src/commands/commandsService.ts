@@ -28,8 +28,16 @@ import {
 } from './watch-function/watchFunctionOperations';
 import { WATCH_FUNCTION_COMMAND_NAME } from './watch-function/watchFunctionCore';
 
+// Set app name command imports
+import {
+  executeSetAppNameCommandOperation,
+  VSCodeProvider as SetAppNameVSCodeProvider,
+  WorkspaceConfigProvider as SetAppNameWorkspaceConfigProvider
+} from './set-app-name/setAppNameOperations';
+import { SET_APP_NAME_COMMAND_NAME } from './set-app-name/setAppNameCore';
+
 // VS Code provider implementation (implements all command VSCode interfaces)
-class VSCodeProviderImpl implements LoginVSCodeProvider, RefreshDataVSCodeProvider {
+class VSCodeProviderImpl implements LoginVSCodeProvider, RefreshDataVSCodeProvider, SetAppNameVSCodeProvider {
   showInputBox(options: vscode.InputBoxOptions): Thenable<string | undefined> {
     return vscode.window.showInputBox(options);
   }
@@ -83,12 +91,20 @@ class FileFocusServiceAdapter implements LoginFileFocusServiceProvider, RefreshD
   }
 }
 
+// Workspace config provider implementation
+class WorkspaceConfigProviderImpl implements SetAppNameWorkspaceConfigProvider {
+  getConfiguration(section: string): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration(section);
+  }
+}
+
 export class CommandsService {
   private static instance: CommandsService;
   private vscodeProvider: VSCodeProviderImpl;
   private loggerProvider: LoggerProviderImpl;
   private apiServiceProvider: ApiServiceAdapter;
   private fileFocusServiceProvider: FileFocusServiceAdapter;
+  private workspaceConfigProvider: WorkspaceConfigProviderImpl;
 
   private constructor(
     private context: vscode.ExtensionContext,
@@ -99,6 +115,7 @@ export class CommandsService {
     this.loggerProvider = new LoggerProviderImpl();
     this.apiServiceProvider = new ApiServiceAdapter(apiService);
     this.fileFocusServiceProvider = new FileFocusServiceAdapter(fileFocusService);
+    this.workspaceConfigProvider = new WorkspaceConfigProviderImpl();
   }
 
   public static getInstance(
@@ -132,7 +149,12 @@ export class CommandsService {
         this.executeWatchFunctionCommand(functionName, codeLensPath)
     );
 
-    return [loginCommand, refreshDataCommand, watchFunctionCommand];
+    const setAppNameCommand = vscode.commands.registerCommand(
+      SET_APP_NAME_COMMAND_NAME,
+      () => this.executeSetAppNameCommand()
+    );
+
+    return [loginCommand, refreshDataCommand, watchFunctionCommand, setAppNameCommand];
   }
 
   /**
@@ -197,6 +219,22 @@ export class CommandsService {
       this.loggerProvider,
       functionName,
       codeLensPath
+    );
+
+    if (result.success) {
+      await this.vscodeProvider.showInformationMessage(result.data);
+    } else {
+      await this.vscodeProvider.showErrorMessage(result.error.message);
+    }
+  }
+
+  /**
+   * Execute set app name command
+   */
+  private async executeSetAppNameCommand(): Promise<void> {
+    const result = await executeSetAppNameCommandOperation(
+      this.workspaceConfigProvider,
+      this.vscodeProvider
     );
 
     if (result.success) {

@@ -119,11 +119,22 @@ export class ApiService {
         return null;
       }
 
-      Logger.log(`Searching function calls for ${functionNames.length} functions: ${functionNames.join(', ')}`);
+      // Get app name from workspace settings
+      const config = vscode.workspace.getConfiguration('prodwatch');
+      const appName = config.get<string>('appName');
+      
+      if (!appName) {
+        Logger.log('Cannot search function calls: App name not configured');
+        vscode.window.showErrorMessage('App name not configured. Please run "ProdWatch: Set App Name" command first.');
+        return null;
+      }
+
+      Logger.log(`Searching function calls for ${functionNames.length} functions: ${functionNames.join(', ')} in app: ${appName}`);
 
       const requestBody = {
         event_name: "search-function-calls",
-        function_names: functionNames
+        function_names: functionNames,
+        app_name: appName
       };
 
       Logger.log(`Request body: ${JSON.stringify(requestBody)}`);

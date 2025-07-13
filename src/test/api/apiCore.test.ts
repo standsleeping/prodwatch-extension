@@ -149,9 +149,10 @@ suite('ApiCore', () => {
 
   suite('createSearchRequest', () => {
     test('should create search request with filtered function names', () => {
-      const result = createSearchRequest(['func1', '  ', 'func2', '']);
+      const result = createSearchRequest(['func1', '  ', 'func2', ''], 'test-app');
       assert.deepStrictEqual(result, {
         event_name: 'search-function-calls',
+        app_name: 'test-app',
         function_names: ['func1', 'func2']
       });
     });

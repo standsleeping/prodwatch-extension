@@ -15,6 +15,7 @@ export interface LoginResponse {
 export interface SearchRequest {
   event_name: string;
   function_names: string[];
+  app_name: string;
 }
 
 export interface ApiConfig {
@@ -32,6 +33,10 @@ export const isValidPassword = (password: string | undefined): boolean => {
 
 export const isValidToken = (token: string | undefined): boolean => {
   return typeof token === 'string' && token.length > 0;
+};
+
+export const isValidAppName = (appName: string | undefined): boolean => {
+  return typeof appName === 'string' && appName.trim().length > 0;
 };
 
 export const isValidBaseUrl = (baseUrl: string | undefined): boolean => {
@@ -73,10 +78,11 @@ export const createLoginRequest = (credentials: LoginCredentials): object => {
   };
 };
 
-export const createSearchRequest = (functionNames: string[]): SearchRequest => {
+export const createSearchRequest = (functionNames: string[], appName: string): SearchRequest => {
   return {
     event_name: "search-function-calls",
-    function_names: functionNames.filter(name => name.trim().length > 0)
+    function_names: functionNames.filter(name => name.trim().length > 0),
+    app_name: appName
   };
 };
 
