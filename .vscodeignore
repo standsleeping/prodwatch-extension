@@ -11,3 +11,6 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 scratchpad/**
 RULES.md
+ARCHITECTURE.md
+CLAUDE.md
+.cursor/**
