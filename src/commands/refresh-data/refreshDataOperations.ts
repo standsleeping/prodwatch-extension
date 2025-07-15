@@ -20,7 +20,7 @@ export type Result<T> =
  * Interface abstractions for dependencies
  */
 export interface FileFocusServiceProvider {
-  fetchDataForActiveFile(): Promise<void>;
+  fetchDataForActiveFile(): Promise<boolean>;
 }
 
 export interface VSCodeProvider {
@@ -56,11 +56,18 @@ export const refreshDataOperation = async (
   }
 
   try {
-    await fileFocusService.fetchDataForActiveFile();
-    return {
-      success: true,
-      data: formatRefreshDataMessage()
-    };
+    const fetchSuccess = await fileFocusService.fetchDataForActiveFile();
+    if (fetchSuccess) {
+      return {
+        success: true,
+        data: formatRefreshDataMessage()
+      };
+    } else {
+      return {
+        success: false,
+        error: createRefreshDataError('Failed to fetch function data from server', 'refresh data operation')
+      };
+    }
   } catch (error) {
     return {
       success: false,

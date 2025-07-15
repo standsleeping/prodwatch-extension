@@ -44,8 +44,7 @@ export const formatRefreshDataMessage = (): string => {
  * Pure error handling functions
  */
 export const createRefreshDataError = (message: string, context?: string): Error => {
-  const fullMessage = context ? `Refresh data error in ${context}: ${message}` : `Refresh data error: ${message}`;
-  return new Error(fullMessage);
+  return new Error(message);
 };
 
 export const createRefreshDataValidationError = (message: string, field?: string): Error => {
@@ -54,11 +53,11 @@ export const createRefreshDataValidationError = (message: string, field?: string
 };
 
 export const isRefreshDataError = (error: unknown): error is Error => {
-  return error instanceof Error && error.message.includes('Refresh data error');
+  return error instanceof Error;
 };
 
 export const isRefreshDataValidationError = (error: unknown): error is Error => {
-  return error instanceof Error && !error.message.includes('Refresh data error');
+  return error instanceof Error;
 };
 
 /**

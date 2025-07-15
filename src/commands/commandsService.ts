@@ -86,8 +86,8 @@ class ApiServiceAdapter implements LoginApiServiceProvider {
 class FileFocusServiceAdapter implements LoginFileFocusServiceProvider, RefreshDataFileFocusServiceProvider {
   constructor(private fileFocusService: FileFocusService) {}
 
-  async fetchDataForActiveFile(): Promise<void> {
-    return this.fileFocusService.fetchDataForActiveFile();
+  async fetchDataForActiveFile(): Promise<boolean> {
+    return await this.fileFocusService.fetchDataForActiveFile();
   }
 }
 
@@ -187,22 +187,22 @@ export class CommandsService {
    * Execute refresh data command with progress indication
    */
   private async executeRefreshDataCommand(): Promise<void> {
-    await this.vscodeProvider.withProgress({
+    const result = await this.vscodeProvider.withProgress({
       location: vscode.ProgressLocation.Notification,
       title: 'Refreshing function data...',
       cancellable: false
     }, async () => {
-      const result = await executeRefreshDataCommandOperation(
+      return await executeRefreshDataCommandOperation(
         this.fileFocusServiceProvider,
         this.vscodeProvider
       );
-
-      if (result.success) {
-        await this.vscodeProvider.showInformationMessage(result.data);
-      } else {
-        await this.vscodeProvider.showErrorMessage(result.error.message);
-      }
     });
+
+    if (result.success) {
+      await this.vscodeProvider.showInformationMessage(result.data);
+    } else {
+      await this.vscodeProvider.showErrorMessage(result.error.message);
+    }
   }
 
   /**

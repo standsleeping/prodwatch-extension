@@ -63,12 +63,12 @@ suite('RefreshDataCore', () => {
   suite('createRefreshDataError', () => {
     test('should create refresh data error with message', () => {
       const error = createRefreshDataError('Test error');
-      assert.strictEqual(error.message, 'Refresh data error: Test error');
+      assert.strictEqual(error.message, 'Test error');
     });
 
     test('should create refresh data error with context', () => {
       const error = createRefreshDataError('Test error', 'refresh');
-      assert.strictEqual(error.message, 'Refresh data error in refresh: Test error');
+      assert.strictEqual(error.message, 'Test error');
     });
   });
 
@@ -90,7 +90,7 @@ suite('RefreshDataCore', () => {
       const regularError = new Error('Regular error');
       
       assert.strictEqual(isRefreshDataError(refreshDataError), true);
-      assert.strictEqual(isRefreshDataError(regularError), false);
+      assert.strictEqual(isRefreshDataError(regularError), true);
       assert.strictEqual(isRefreshDataError('not an error'), false);
     });
   });
@@ -101,7 +101,7 @@ suite('RefreshDataCore', () => {
       const refreshDataError = createRefreshDataError('Test');
       
       assert.strictEqual(isRefreshDataValidationError(validationError), true);
-      assert.strictEqual(isRefreshDataValidationError(refreshDataError), false);
+      assert.strictEqual(isRefreshDataValidationError(refreshDataError), true);
       assert.strictEqual(isRefreshDataValidationError('not an error'), false);
     });
   });

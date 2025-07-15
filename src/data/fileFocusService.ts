@@ -41,12 +41,12 @@ export class FileFocusService {
     Logger.log('FileFocusService: Event listeners setup complete');
   }
 
-  private async handleFileFocus(editor: vscode.TextEditor): Promise<void> {
+  private async handleFileFocus(editor: vscode.TextEditor): Promise<boolean> {
     const document = editor.document;
 
     // Only process Python files
     if (document.languageId !== 'python') {
-      return;
+      return false;
     }
 
     Logger.log(`File focused: ${document.uri.fsPath}`);
@@ -58,7 +58,7 @@ export class FileFocusService {
 
       if (functionPaths.length === 0) {
         Logger.log('No functions found in file');
-        return;
+        return false;
       }
 
       Logger.log(`Found ${functionPaths.length} functions in ${modulePath}: ${functionPaths.join(', ')}`);
@@ -70,11 +70,14 @@ export class FileFocusService {
         // Update the function data service with received data
         this.functionDataService.updateFromServerResponse(modulePath, serverResponse);
         Logger.log(`Successfully updated data for ${serverResponse.function_names.length} functions (${serverResponse.total_calls} total calls)`);
+        return true;
       } else {
         Logger.log('No response received from server');
+        return false;
       }
     } catch (error) {
       Logger.log(`Error handling file focus: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
     }
   }
 
@@ -127,11 +130,12 @@ export class FileFocusService {
   /**
    * Manually trigger data fetch for the currently active editor
    */
-  public async fetchDataForActiveFile(): Promise<void> {
+  public async fetchDataForActiveFile(): Promise<boolean> {
     const activeEditor = vscode.window.activeTextEditor;
     if (activeEditor) {
-      await this.handleFileFocus(activeEditor);
+      return await this.handleFileFocus(activeEditor);
     }
+    return false;
   }
 
   /**

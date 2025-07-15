@@ -10,10 +10,11 @@ import {
 suite('RefreshDataOperations', () => {
   // Mock implementations
   const createMockFileFocusService = (shouldSucceed = true): FileFocusServiceProvider => ({
-    async fetchDataForActiveFile(): Promise<void> {
+    async fetchDataForActiveFile(): Promise<boolean> {
       if (!shouldSucceed) {
         throw new Error('Failed to fetch data');
       }
+      return shouldSucceed;
     }
   });
 

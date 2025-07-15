@@ -31,7 +31,7 @@ export interface VSCodeProvider {
 }
 
 export interface FileFocusServiceProvider {
-  fetchDataForActiveFile(): Promise<void>;
+  fetchDataForActiveFile(): Promise<boolean>;
 }
 
 export interface LoggerProvider {
