@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
 import { FunctionDataService } from '../data/functionDataService';
+import { WatchStatus } from '../api/apiService';
 import {
   provideHoverOperation,
   HoverDataProvider,
@@ -49,6 +50,22 @@ export class FunctionHoverProvider implements vscode.HoverProvider {
     this.dataProvider = new FunctionDataServiceAdapter(dataService);
     this.hoverFactory = new VSCodeHoverFactory();
     Logger.log('FunctionHoverProvider initialized');
+  }
+
+  private getWatchStatusText(watchStatus: WatchStatus): string {
+    switch (watchStatus) {
+      case WatchStatus.ACTIVE:
+        return '**Watch Status:** Active';
+      case WatchStatus.PENDING:
+        return '**Watch Status:** Pending';
+      case WatchStatus.FAILED:
+        return '**Watch Status:** Failed';
+      case WatchStatus.MIXED_STATES:
+        return '**Watch Status:** Mixed States';
+      case WatchStatus.NOT_REQUESTED:
+      default:
+        return '**Watch Status:** Not Requested';
+    }
   }
 
   public provideHover(
@@ -100,6 +117,11 @@ export class FunctionHoverProvider implements vscode.HoverProvider {
       dataPoints.forEach(point => {
         hoverContent.appendMarkdown(`• ${point}\n\n`);
       });
+
+      // Add watch status
+      const watchStatus = functionData?.callData?.watch_status || WatchStatus.NOT_REQUESTED;
+      const watchStatusText = this.getWatchStatusText(watchStatus);
+      hoverContent.appendMarkdown(`${watchStatusText}\n\n`);
 
       // Add watch button
       const watchUri = vscode.Uri.parse(`command:prodwatch.watchFunction?${encodeURIComponent(JSON.stringify([functionName, codeLensPath]))}`);

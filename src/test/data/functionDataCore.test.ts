@@ -36,7 +36,7 @@ import {
   isFormatError,
   isValidationError
 } from '../../data/functionDataCore';
-import { FunctionCall, FunctionCallData, ServerFunctionResponse } from '../../api/apiService';
+import { FunctionCall, FunctionCallData, ServerFunctionResponse, WatchStatus } from '../../api/apiService';
 
 suite('FunctionDataCore', () => {
   suite('isValidFunctionCall', () => {
@@ -73,7 +73,8 @@ suite('FunctionDataCore', () => {
     test('should return true for valid function call data', () => {
       const validData: FunctionCallData = {
         calls: [{ function_name: 'test' }],
-        total_calls: 1
+        total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       assert.strictEqual(isValidFunctionCallData(validData), true);
@@ -82,7 +83,8 @@ suite('FunctionDataCore', () => {
     test('should return true for empty calls array', () => {
       const emptyData: FunctionCallData = {
         calls: [],
-        total_calls: 0
+        total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       assert.strictEqual(isValidFunctionCallData(emptyData), true);
@@ -105,7 +107,8 @@ suite('FunctionDataCore', () => {
         functions: {
           'test_function': {
             calls: [{ function_name: 'test_function' }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -289,7 +292,8 @@ suite('FunctionDataCore', () => {
             error: 'Test error'
           }
         ],
-        total_calls: 2
+        total_calls: 2,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = convertCallsToDataPoints('test_func', callData);
@@ -304,7 +308,8 @@ suite('FunctionDataCore', () => {
     test('should handle empty calls array', () => {
       const callData: FunctionCallData = {
         calls: [],
-        total_calls: 0
+        total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = convertCallsToDataPoints('test_func', callData);
@@ -321,7 +326,8 @@ suite('FunctionDataCore', () => {
 
       const callData: FunctionCallData = {
         calls,
-        total_calls: 10
+        total_calls: 10,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = convertCallsToDataPoints('test_func', callData, { maxRecentCalls: 3 });
@@ -339,7 +345,8 @@ suite('FunctionDataCore', () => {
           execution_time_ms: 100,
           error: 'Test error'
         }],
-        total_calls: 1
+        total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = convertCallsToDataPoints('test_func', callData, {

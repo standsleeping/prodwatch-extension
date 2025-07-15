@@ -1,4 +1,4 @@
-import { FunctionCall, FunctionCallData, ServerFunctionResponse } from '../api/apiService';
+import { FunctionCall, FunctionCallData, ServerFunctionResponse, WatchStatus } from '../api/apiService';
 
 /**
  * Core types for function data
@@ -6,6 +6,7 @@ import { FunctionCall, FunctionCallData, ServerFunctionResponse } from '../api/a
 export interface FunctionData {
   codeLensPath: string;
   dataPoints: string[];
+  callData?: FunctionCallData;
 }
 
 export interface FunctionCallArguments {
@@ -41,11 +42,18 @@ export const isValidFunctionCallData = (data: unknown): data is FunctionCallData
     return false;
   }
   const fcd = data as Partial<FunctionCallData>;
+  
+  const isValidWatchStatus = (status: unknown): boolean => {
+    return typeof status === 'string' && 
+           Object.values(WatchStatus).includes(status as WatchStatus);
+  };
+  
   return (
     Array.isArray(fcd.calls) &&
     typeof fcd.total_calls === 'number' &&
     fcd.total_calls >= 0 &&
-    fcd.calls.every(call => isValidFunctionCall(call))
+    fcd.calls.every(call => isValidFunctionCall(call)) &&
+    isValidWatchStatus(fcd.watch_status)
   );
 };
 
@@ -80,9 +88,14 @@ export const normalizeArguments = (args?: unknown[], kwargs?: Record<string, unk
   kwargs: kwargs && typeof kwargs === 'object' && kwargs !== null ? kwargs : undefined
 });
 
-export const createFunctionData = (codeLensPath: string, dataPoints: string[]): FunctionData => ({
+export const createFunctionData = (
+  codeLensPath: string, 
+  dataPoints: string[], 
+  callData?: FunctionCallData
+): FunctionData => ({
   codeLensPath,
-  dataPoints: [...dataPoints] // Immutable copy
+  dataPoints: [...dataPoints], // Immutable copy
+  callData
 });
 
 /**

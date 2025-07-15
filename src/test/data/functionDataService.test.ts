@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { suite, test } from 'mocha';
 import * as vscode from 'vscode';
 import { FunctionDataService } from '../../data/functionDataService';
-import { ServerFunctionResponse } from '../../api/apiService';
+import { ServerFunctionResponse, WatchStatus } from '../../api/apiService';
 import { MockExtensionContext } from '../mocks';
 
 
@@ -90,7 +90,8 @@ suite('FunctionDataService', () => {
               function_name: 'test_func',
               args: [1, 2]
             }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -117,11 +118,13 @@ suite('FunctionDataService', () => {
         functions: {
           'test.func1': {
             calls: [],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           },
           'test.func2': {
             calls: [],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -143,7 +146,8 @@ suite('FunctionDataService', () => {
         functions: {
           'test.function': {
             calls: [],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -172,7 +176,8 @@ suite('FunctionDataService', () => {
               args: [1, 2],
               execution_time_ms: 100
             }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           },
           'another.function': {
             calls: [{
@@ -180,7 +185,8 @@ suite('FunctionDataService', () => {
               kwargs: { key: 'value' },
               error: 'Test error'
             }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -228,7 +234,8 @@ suite('FunctionDataService', () => {
         functions: {
           'test.function': {
             calls: [],
-            total_calls: 0
+            total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -262,7 +269,8 @@ suite('FunctionDataService', () => {
         functions: {
           'test.function': {
             calls: [],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -281,7 +289,8 @@ suite('FunctionDataService', () => {
               function_name: 'test_func',
               args: ['new_arg']
             }],
-            total_calls: 5
+            total_calls: 5,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -321,7 +330,8 @@ suite('FunctionDataService', () => {
                 execution_time_ms: 50.1
               }
             ],
-            total_calls: 10
+            total_calls: 10,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -366,7 +376,8 @@ suite('FunctionDataService', () => {
         functions: {
           'test.function': {
             calls: manyCalls,
-            total_calls: 20
+            total_calls: 20,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };

@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { FunctionHoverProvider } from '../../hover/functionHoverProvider';
 import { FunctionDataService } from '../../data/functionDataService';
 import { FunctionData } from '../../data/functionDataCore';
+import { WatchStatus } from '../../api/apiService';
 import { MockTextDocument, MockExtensionContext } from '../mocks';
 
 function createTestFunctionDataService(): FunctionDataService {
@@ -39,7 +40,8 @@ suite('FunctionHoverProvider', () => {
             calls: [
               { function_name: 'test_function', args: [], kwargs: {}, execution_time_ms: 15 }
             ],
-            total_calls: 10
+            total_calls: 10,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -195,7 +197,8 @@ suite('FunctionHoverProvider', () => {
           functions: {
             [expectedCodeLensPath]: {
               calls: [{ function_name: 'test_function', args: [], kwargs: {}, execution_time_ms: 10 }],
-              total_calls: 1
+              total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
             }
           }
         };

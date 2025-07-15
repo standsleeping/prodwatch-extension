@@ -15,11 +15,23 @@ export interface FunctionCall {
 }
 
 /**
+ * Enum for function watch status
+ */
+export enum WatchStatus {
+  NOT_REQUESTED = 'not_requested',
+  PENDING = 'pending',
+  FAILED = 'failed',
+  ACTIVE = 'active',
+  MIXED_STATES = 'mixed_states'
+}
+
+/**
  * Interface for individual function call data
  */
 export interface FunctionCallData {
   calls: FunctionCall[];
   total_calls: number;
+  watch_status: WatchStatus;
 }
 
 /**

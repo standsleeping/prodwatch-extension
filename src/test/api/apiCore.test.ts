@@ -23,6 +23,7 @@ import {
   isClientError,
   isServerError
 } from '../../api/apiCore';
+import { WatchStatus } from '../../api/apiService';
 
 suite('ApiCore', () => {
   suite('isValidUsername', () => {
@@ -185,7 +186,8 @@ suite('ApiCore', () => {
         functions: {
           func1: {
             calls: [],
-            total_calls: 5
+            total_calls: 5,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };

@@ -9,7 +9,7 @@ import {
   NotificationService
 } from '../../api/apiOperations';
 import { ApiConfig } from '../../api/apiCore';
-import { ServerFunctionResponse } from '../../api/apiService';
+import { ServerFunctionResponse, WatchStatus } from '../../api/apiService';
 
 // Mock implementations for testing
 const createMockHttpClient = (responseOverrides?: Partial<Response>): HttpClient => {
@@ -192,7 +192,8 @@ suite('ApiOperations', () => {
       functions: {
         func1: {
           calls: [],
-          total_calls: 5
+          total_calls: 5,
+        watch_status: WatchStatus.NOT_REQUESTED
         }
       }
     };

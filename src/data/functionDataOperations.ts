@@ -167,7 +167,7 @@ export const processFunctionCallDataOperation = (
 
   try {
     const dataPoints = convertCallsToDataPoints(functionPath, callData, options);
-    const functionData = createFunctionData(functionPath, dataPoints);
+    const functionData = createFunctionData(functionPath, dataPoints, callData);
 
     return {
       success: true,

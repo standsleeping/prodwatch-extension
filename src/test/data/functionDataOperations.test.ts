@@ -15,7 +15,7 @@ import {
   getStorageStatsOperation
 } from '../../data/functionDataOperations';
 import { FunctionData, DEFAULT_PLACEHOLDER_DATA } from '../../data/functionDataCore';
-import { FunctionCallData, ServerFunctionResponse } from '../../api/apiService';
+import { FunctionCallData, ServerFunctionResponse, WatchStatus } from '../../api/apiService';
 
 // Simple in-memory storage implementation for testing
 const createMockStorage = (initialData?: Map<string, FunctionData>): FunctionDataStorage => {
@@ -219,7 +219,8 @@ suite('FunctionDataOperations', () => {
           args: [1, 2],
           execution_time_ms: 100
         }],
-        total_calls: 1
+        total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = processFunctionCallDataOperation('test.function', callData);
@@ -235,7 +236,8 @@ suite('FunctionDataOperations', () => {
     test('should return error for invalid function path', () => {
       const callData: FunctionCallData = {
         calls: [],
-        total_calls: 0
+        total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = processFunctionCallDataOperation('', callData);
@@ -267,7 +269,8 @@ suite('FunctionDataOperations', () => {
           execution_time_ms: 100,
           error: 'Test error'
         }],
-        total_calls: 1
+        total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
       };
 
       const result = processFunctionCallDataOperation('test.function', callData, {
@@ -295,11 +298,13 @@ suite('FunctionDataOperations', () => {
               function_name: 'test_func',
               args: [1, 2]
             }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           },
           'test.other': {
             calls: [],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -355,11 +360,13 @@ suite('FunctionDataOperations', () => {
         functions: {
           'valid.function': {
             calls: [],
-            total_calls: 0
+            total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
           },
           '': { // Invalid function path
             calls: [],
-            total_calls: 0
+            total_calls: 0,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -425,7 +432,8 @@ suite('FunctionDataOperations', () => {
             calls: [{
               function_name: 'test_func'
             }],
-            total_calls: 1
+            total_calls: 1,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };

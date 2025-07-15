@@ -17,6 +17,7 @@ import {
 import { HoverContext, FunctionMatch, HoverContentData } from '../../hover/hoverCore';
 import { FunctionData } from '../../data/functionDataCore';
 import { FunctionDataService } from '../../data/functionDataService';
+import { WatchStatus } from '../../api/apiService';
 import { MockTextDocument, MockExtensionContext } from '../mocks';
 
 function createInMemoryFunctionDataService(): FunctionDataService {
@@ -160,7 +161,8 @@ suite('HoverOperations', () => {
             calls: [
               { function_name: 'test_function', args: [], kwargs: {}, execution_time_ms: 10 }
             ],
-            total_calls: 5
+            total_calls: 5,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
@@ -291,7 +293,8 @@ suite('HoverOperations', () => {
         functions: {
           'src.module.file.test_function': {
             calls: [{ function_name: 'test_function', args: [], kwargs: {}, execution_time_ms: 10 }],
-            total_calls: 5
+            total_calls: 5,
+        watch_status: WatchStatus.NOT_REQUESTED
           }
         }
       };
