@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import Logger from '../utils/logger';
 import { FunctionDataService } from '../data/functionDataService';
-import { WatchStatus } from '../api/apiService';
 
 export class PythonCodeLensProvider implements vscode.CodeLensProvider {
   private regex: RegExp;
@@ -12,21 +11,6 @@ export class PythonCodeLensProvider implements vscode.CodeLensProvider {
     Logger.log('PythonCodeLensProvider initialized');
   }
 
-  private getWatchStatusIndicator(watchStatus: WatchStatus): string {
-    switch (watchStatus) {
-      case WatchStatus.ACTIVE:
-        return '[WATCHED] ';
-      case WatchStatus.PENDING:
-        return '[PENDING] ';
-      case WatchStatus.FAILED:
-        return '[FAILED] ';
-      case WatchStatus.MIXED_STATES:
-        return '[MIXED] ';
-      case WatchStatus.NOT_REQUESTED:
-      default:
-        return '';
-    }
-  }
 
   protected getModulePath(filePath: string): string {
     Logger.log(`Analyzing module path for file: ${filePath}`);
@@ -91,12 +75,8 @@ export class PythonCodeLensProvider implements vscode.CodeLensProvider {
         const totalCalls = totalCallsMatch ? parseInt(totalCallsMatch[1]) : 0;
 
         if (totalCalls > 0) {
-          // Get watch status indicator
-          const watchStatus = functionData.callData?.watch_status || WatchStatus.NOT_REQUESTED;
-          const watchIndicator = this.getWatchStatusIndicator(watchStatus);
-          
           codeLenses.push(new vscode.CodeLens(range, {
-            title: `${watchIndicator}${totalCalls} calls`,
+            title: `${totalCalls} calls`,
             command: ''
           }));
         }
