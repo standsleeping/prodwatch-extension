@@ -13,6 +13,7 @@ See function calls in production from your editor.
   - Execution times for each call.
   - Error information when calls fail.
 - **Automatic Data Fetching**: Production data is automatically loaded when you open or switch to Python files.
+- **Automatic Polling**: Optionally enable automatic background polling to keep function data up-to-date.
 - **Authentication**: Secure login to your ProdWatch account.
 - **Manual Data Refresh**: Refresh production data on demand for the current file.
 - **Configurable API Endpoint**: Switch between production and local development servers.
@@ -50,12 +51,34 @@ Alternatively, add this to your `settings.json`:
 1. Type "ProdWatch: Login" into the Command Palette.
 2. Enter your username and password when prompted.
 
+### 5. Configure Automatic Polling (Optional).
+
+For real-time updates, you can enable automatic polling:
+
+1. Open VS Code Settings (`Cmd+,` on Mac, `Ctrl+,` on Windows/Linux)
+2. Search for "prodwatch"
+3. Enable **ProdWatch: Polling Enabled**
+4. Set **ProdWatch: Polling Interval Seconds** (5-300 seconds, default: 30)
+
+Alternatively, add this to your `settings.json`:
+
+```json
+{
+  "prodwatch.pollingEnabled": true,
+  "prodwatch.pollingIntervalSeconds": 30
+}
+```
+
+When enabled, the extension will automatically refresh function data every X seconds while you have Python files open.
+
 ## Configuration
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `prodwatch.apiUrl` | `https://getprodwatch.com` | Base URL for ProdWatch API |
 | `prodwatch.appName` | _(none)_ | Name of the app to monitor with ProdWatch |
+| `prodwatch.pollingEnabled` | `false` | Enable automatic polling for function data updates |
+| `prodwatch.pollingIntervalSeconds` | `30` | Polling interval in seconds (5-300 seconds) |
 
 ## Commands
 
@@ -74,7 +97,7 @@ Alternatively, add this to your `settings.json`:
    - Recent calls with actual parameters used in production
    - Execution time metrics
    - Error information if the function failed
-5. **Stay Updated**: Data refreshes automatically when switching between files, or manually refresh on demand
+5. **Stay Updated**: Data refreshes automatically when switching between files, or enable automatic polling for real-time updates, or manually refresh on demand
 
 ## Requirements
 

@@ -9,6 +9,8 @@ import Logger from './utils/logger';
 import { AuthService } from './auth/authService';
 import { ApiService } from './api/apiService';
 import { CommandsService } from './commands/commandsService';
+import { PollingService } from './polling/pollingService';
+import { createRefreshDataPollingProvider } from './polling/pollingProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -48,6 +50,33 @@ export function activate(context: vscode.ExtensionContext) {
   // Register commands with extension context
   context.subscriptions.push(...commandDisposables);
 
+  // Initialize polling service
+  const workspaceConfigProvider = {
+    getConfiguration: (section: string) => vscode.workspace.getConfiguration(section)
+  };
+  const vscodeProvider = {
+    showInformationMessage: (message: string) => vscode.window.showInformationMessage(message),
+    showErrorMessage: (message: string) => vscode.window.showErrorMessage(message),
+    withProgress: <R>(options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string; increment?: number }>) => Thenable<R>) => 
+      vscode.window.withProgress(options, task),
+    getActiveTextEditor: () => vscode.window.activeTextEditor
+  };
+  const pollingProvider = createRefreshDataPollingProvider(fileFocusService, vscodeProvider);
+  const pollingService = PollingService.getInstance(workspaceConfigProvider, pollingProvider);
+  
+  // Start polling based on configuration
+  pollingService.startPolling();
+
+  // Handle configuration changes for polling
+  const configurationChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
+    if (event.affectsConfiguration('prodwatch.pollingEnabled') || 
+        event.affectsConfiguration('prodwatch.pollingIntervalSeconds')) {
+      Logger.log('Polling configuration changed, restarting polling service');
+      pollingService.restartPolling();
+    }
+  });
+  context.subscriptions.push(configurationChangeDisposable);
+
   // Register the CodeLens provider for Python files
   const codeLensProvider = new PythonCodeLensProvider(functionDataService);
   context.subscriptions.push(
@@ -69,6 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Dispose of services when extension deactivates
   context.subscriptions.push({
     dispose: () => {
+      pollingService.stopPolling();
       fileFocusService.dispose();
     }
   });
