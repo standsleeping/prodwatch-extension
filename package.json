@@ -41,6 +41,18 @@
         "prodwatch.appName": {
           "type": "string",
           "description": "Name of the app to monitor with ProdWatch"
+        },
+        "prodwatch.pollingEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic polling for function data updates"
+        },
+        "prodwatch.pollingIntervalSeconds": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 300,
+          "description": "Polling interval in seconds (5-300 seconds)"
         }
       }
     }
