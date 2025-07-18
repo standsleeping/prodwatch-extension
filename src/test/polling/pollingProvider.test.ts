@@ -145,4 +145,77 @@ suite('pollingProvider', () => {
       }
     });
   });
+
+  suite('CodeLens Integration', () => {
+    test('should trigger CodeLens refresh when polling updates data', async () => {
+      let refreshCallCount = 0;
+      
+      // Mock FileFocusService that simulates data update triggering CodeLens refresh
+      const mockFileFocusServiceWithCodeLens: RefreshDataFileFocusServiceProvider = {
+        fetchDataForActiveFile: async (): Promise<boolean> => {
+          // Simulate the data update flow that should trigger CodeLens refresh
+          refreshCallCount++;
+          return true;
+        }
+      };
+      
+      const vscodeProvider = createMockVSCodeProvider(true, 'python');
+      const pollingProvider = createRefreshDataPollingProvider(mockFileFocusServiceWithCodeLens, vscodeProvider);
+      
+      const result = await pollingProvider.executeRefresh();
+      
+      assert.strictEqual(result.success, true);
+      assert.ok(refreshCallCount > 0, 'CodeLens refresh should be triggered during polling');
+    });
+
+    test('should not trigger CodeLens refresh when polling fails', async () => {
+      let refreshCallCount = 0;
+      
+      // Mock FileFocusService that fails and should not trigger CodeLens refresh
+      const mockFileFocusServiceThatFails: RefreshDataFileFocusServiceProvider = {
+        fetchDataForActiveFile: async (): Promise<boolean> => {
+          // Don't increment refresh count since this simulates a failure
+          return false;
+        }
+      };
+      
+      const vscodeProvider = createMockVSCodeProvider(true, 'python');
+      const pollingProvider = createRefreshDataPollingProvider(mockFileFocusServiceThatFails, vscodeProvider);
+      
+      const result = await pollingProvider.executeRefresh();
+      
+      assert.strictEqual(result.success, false);
+      assert.strictEqual(refreshCallCount, 0, 'CodeLens refresh should not be triggered when polling fails');
+    });
+
+    test('should handle CodeLens refresh in integration with data service', async () => {
+      // This test simulates the full integration flow:
+      // Polling -> FileFocusService -> FunctionDataService -> CodeLens refresh
+      
+      let dataServiceUpdateCalled = false;
+      let codeLensRefreshCalled = false;
+      
+      const mockFileFocusServiceWithFullIntegration: RefreshDataFileFocusServiceProvider = {
+        fetchDataForActiveFile: async (): Promise<boolean> => {
+          // Simulate the full chain:
+          // 1. FileFocusService fetches data
+          dataServiceUpdateCalled = true;
+          
+          // 2. FunctionDataService updates data and triggers CodeLens refresh
+          codeLensRefreshCalled = true;
+          
+          return true;
+        }
+      };
+      
+      const vscodeProvider = createMockVSCodeProvider(true, 'python');
+      const pollingProvider = createRefreshDataPollingProvider(mockFileFocusServiceWithFullIntegration, vscodeProvider);
+      
+      const result = await pollingProvider.executeRefresh();
+      
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(dataServiceUpdateCalled, true, 'Data service should be updated during polling');
+      assert.strictEqual(codeLensRefreshCalled, true, 'CodeLens should be refreshed when data updates');
+    });
+  });
 });

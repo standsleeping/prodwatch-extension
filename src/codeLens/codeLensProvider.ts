@@ -4,11 +4,18 @@ import { FunctionDataService } from '../data/functionDataService';
 
 export class PythonCodeLensProvider implements vscode.CodeLensProvider {
   private regex: RegExp;
+  private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
+  public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 
   constructor(private functionDataService: FunctionDataService) {
     // Match Python function definitions
     this.regex = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
     Logger.log('PythonCodeLensProvider initialized');
+  }
+
+  public refresh(): void {
+    Logger.log('CodeLens refresh triggered');
+    this._onDidChangeCodeLenses.fire();
   }
 
 

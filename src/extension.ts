@@ -79,6 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register the CodeLens provider for Python files
   const codeLensProvider = new PythonCodeLensProvider(functionDataService);
+  functionDataService.setCodeLensProvider(codeLensProvider);
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
       { language: 'python', scheme: 'file' },

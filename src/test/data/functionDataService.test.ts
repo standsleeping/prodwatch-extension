@@ -395,4 +395,104 @@ suite('FunctionDataService', () => {
       assert.ok(functionData.dataPoints.some(dp => dp.includes('(5 more calls)')));
     });
   });
+
+  suite('CodeLens Integration', () => {
+    test('should trigger CodeLens refresh when data updates', () => {
+      const service = FunctionDataService.getInstance(context);
+      
+      let refreshCalled = false;
+      const mockCodeLensProvider = {
+        refresh: () => { refreshCalled = true; }
+      };
+      
+      service.setCodeLensProvider(mockCodeLensProvider);
+      
+      const serverResponse: ServerFunctionResponse = {
+        function_names: ['test_func'],
+        total_calls: 1,
+        functions: {
+          'test.function': {
+            calls: [],
+            total_calls: 1,
+            watch_status: WatchStatus.NOT_REQUESTED
+          }
+        }
+      };
+      
+      service.updateFromServerResponse('test_module', serverResponse);
+      
+      assert.strictEqual(refreshCalled, true);
+    });
+
+    test('should not crash when no CodeLens provider registered', () => {
+      const service = FunctionDataService.getInstance(context);
+      
+      // Don't register a provider
+      const serverResponse: ServerFunctionResponse = {
+        function_names: ['test_func'],
+        total_calls: 1,
+        functions: { 
+          'test.function': { 
+            calls: [], 
+            total_calls: 1, 
+            watch_status: WatchStatus.NOT_REQUESTED 
+          } 
+        }
+      };
+      
+      // Should not throw
+      assert.doesNotThrow(() => {
+        service.updateFromServerResponse('test_module', serverResponse);
+      });
+    });
+
+    test('should not trigger refresh when data update fails', () => {
+      const service = FunctionDataService.getInstance(context);
+      
+      let refreshCalled = false;
+      const mockCodeLensProvider = {
+        refresh: () => { refreshCalled = true; }
+      };
+      
+      service.setCodeLensProvider(mockCodeLensProvider);
+      
+      // Invalid response that should fail
+      const invalidResponse = {
+        invalid: true
+      } as any;
+      
+      service.updateFromServerResponse('test_module', invalidResponse);
+      
+      // Should not have triggered refresh since update failed
+      assert.strictEqual(refreshCalled, false);
+    });
+
+    test('should trigger refresh only once per successful update', () => {
+      const service = FunctionDataService.getInstance(context);
+      
+      let refreshCallCount = 0;
+      const mockCodeLensProvider = {
+        refresh: () => { refreshCallCount++; }
+      };
+      
+      service.setCodeLensProvider(mockCodeLensProvider);
+      
+      const serverResponse: ServerFunctionResponse = {
+        function_names: ['test_func'],
+        total_calls: 1,
+        functions: {
+          'test.function': {
+            calls: [],
+            total_calls: 1,
+            watch_status: WatchStatus.NOT_REQUESTED
+          }
+        }
+      };
+      
+      service.updateFromServerResponse('test_module', serverResponse);
+      
+      // Should have called refresh exactly once
+      assert.strictEqual(refreshCallCount, 1);
+    });
+  });
 });

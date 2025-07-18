@@ -60,4 +60,49 @@ suite('PythonCodeLensProvider Tests', () => {
       assert.strictEqual(result, 'lib.utils.helper');
     });
   });
+
+  suite('onDidChangeCodeLenses', () => {
+    test('should expose onDidChangeCodeLenses event', () => {
+      const mockService = {} as FunctionDataService;
+      const provider = new PythonCodeLensProvider(mockService);
+      
+      assert.ok(provider.onDidChangeCodeLenses);
+      assert.strictEqual(typeof provider.onDidChangeCodeLenses, 'function');
+    });
+
+    test('should fire event when refresh() is called', () => {
+      const mockService = {} as FunctionDataService;
+      const provider = new PythonCodeLensProvider(mockService);
+      
+      let eventFired = false;
+      provider.onDidChangeCodeLenses(() => {
+        eventFired = true;
+      });
+      
+      provider.refresh();
+      
+      assert.strictEqual(eventFired, true);
+    });
+
+    test('should support multiple event listeners', () => {
+      const mockService = {} as FunctionDataService;
+      const provider = new PythonCodeLensProvider(mockService);
+      
+      let listener1Called = false;
+      let listener2Called = false;
+      
+      provider.onDidChangeCodeLenses(() => {
+        listener1Called = true;
+      });
+      
+      provider.onDidChangeCodeLenses(() => {
+        listener2Called = true;
+      });
+      
+      provider.refresh();
+      
+      assert.strictEqual(listener1Called, true);
+      assert.strictEqual(listener2Called, true);
+    });
+  });
 }); 

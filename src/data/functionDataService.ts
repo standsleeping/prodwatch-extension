@@ -48,6 +48,7 @@ class MapFunctionDataStorage implements FunctionDataStorage {
 export class FunctionDataService {
   private static instance: FunctionDataService;
   private storage: FunctionDataStorage;
+  private codeLensProvider?: { refresh(): void };
 
   private constructor(private context: vscode.ExtensionContext) {
     this.storage = new MapFunctionDataStorage();
@@ -64,6 +65,11 @@ export class FunctionDataService {
   private initializeData(): void {
     // Initialize empty data map - data will be populated from server responses
     Logger.log('Initialized FunctionDataService with empty data map');
+  }
+
+  public setCodeLensProvider(provider: { refresh(): void }): void {
+    this.codeLensProvider = provider;
+    Logger.log('CodeLens provider registered with FunctionDataService');
   }
 
   public getFunctionData(codeLensPath: string): FunctionData | null {
@@ -101,6 +107,11 @@ export class FunctionDataService {
     if (result.success) {
       Logger.log(`Successfully updated ${result.data.updatedCount} functions: ${result.data.functionPaths.join(', ')}`);
       Logger.log(`Function data map now contains ${this.storage.size()} entries`);
+      
+      // Trigger CodeLens refresh when data updates
+      if (this.codeLensProvider) {
+        this.codeLensProvider.refresh();
+      }
     } else {
       Logger.error(`Failed to update function data from server response: ${result.error.message}`);
     }
