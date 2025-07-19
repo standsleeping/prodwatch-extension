@@ -24,7 +24,8 @@ import { REFRESH_DATA_COMMAND_NAME } from './refresh-data/refreshDataCore';
 // Watch function command imports
 import {
   executeWatchFunctionCommandOperation,
-  LoggerProvider as WatchFunctionLoggerProvider
+  LoggerProvider as WatchFunctionLoggerProvider,
+  ApiServiceProvider as WatchFunctionApiServiceProvider
 } from './watch-function/watchFunctionOperations';
 import { WATCH_FUNCTION_COMMAND_NAME } from './watch-function/watchFunctionCore';
 
@@ -74,11 +75,15 @@ class LoggerProviderImpl implements LoginLoggerProvider, WatchFunctionLoggerProv
 }
 
 // API service adapter (implements all command API service interfaces)
-class ApiServiceAdapter implements LoginApiServiceProvider {
+class ApiServiceAdapter implements LoginApiServiceProvider, WatchFunctionApiServiceProvider {
   constructor(private apiService: ApiService) {}
 
   async login(username: string, password: string): Promise<boolean> {
     return this.apiService.login(username, password);
+  }
+
+  async requestWatch(functionNames: string[]): Promise<boolean> {
+    return this.apiService.requestWatch(functionNames);
   }
 }
 
@@ -209,17 +214,27 @@ export class CommandsService {
    * Execute watch function command
    */
   private async executeWatchFunctionCommand(functionName: string, codeLensPath: string): Promise<void> {
+    // Validate the watch function context first (pure function validation)
     const result = executeWatchFunctionCommandOperation(
       this.loggerProvider,
       functionName,
       codeLensPath
     );
 
-    if (result.success) {
-      await this.vscodeProvider.showInformationMessage(result.data);
-    } else {
+    if (!result.success) {
       await this.vscodeProvider.showErrorMessage(result.error.message);
+      return;
     }
+
+    // Call the API service to actually request the watch (imperative shell)
+    const watchSuccess = await this.apiServiceProvider.requestWatch([functionName]);
+    
+    if (!watchSuccess) {
+      // Error messages already shown by API service
+      return;
+    }
+
+    // Additional success handling could go here if needed
   }
 
   /**

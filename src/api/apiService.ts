@@ -114,6 +114,102 @@ export class ApiService {
   }
 
   /**
+   * Request function watches using the /editor-events endpoint
+   */
+  public async requestWatch(functionNames: string[]): Promise<boolean> {
+    try {
+      // Check if user is authenticated
+      const isAuth = await this.authService.isAuthenticated();
+      if (!isAuth) {
+        Logger.log('Cannot request function watches: User not authenticated');
+        vscode.window.showErrorMessage('Authentication required to request function watches');
+        return false;
+      }
+
+      const token = await this.authService.getToken();
+      if (!token) {
+        Logger.log('Cannot request function watches: No auth token available');
+        vscode.window.showErrorMessage('No authentication token found');
+        return false;
+      }
+
+      // Get app name from workspace settings
+      const config = vscode.workspace.getConfiguration('prodwatch');
+      const appName = config.get<string>('appName');
+      
+      if (!appName) {
+        Logger.log('Cannot request function watches: App name not configured');
+        vscode.window.showErrorMessage('App name not configured. Please run "ProdWatch: Set App Name" command first.');
+        return false;
+      }
+
+      Logger.log(`Requesting watches for ${functionNames.length} functions: ${functionNames.join(', ')} in app: ${appName}`);
+
+      const requestBody = {
+        event_name: "request-function-watch",
+        function_names: functionNames,
+        app_name: appName
+      };
+
+      Logger.log(`Watch request body: ${JSON.stringify(requestBody)}`);
+
+      const response = await fetch(`${this.baseUrl}/editor-events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          Logger.log('Function watch request failed: Unauthorized (token may be expired)');
+          vscode.window.showWarningMessage('Authentication expired. Please log in again.');
+          return false;
+        }
+        throw new Error(`Watch request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as { success: boolean; watches_requested: number; already_watching: number; errors: string[] };
+      Logger.log(`Watch request response: ${JSON.stringify(data)}`);
+
+      if (!data.success) {
+        if (data.errors && data.errors.length > 0) {
+          const errorMessage = `Watch request failed: ${data.errors.join(', ')}`;
+          vscode.window.showErrorMessage(errorMessage);
+          Logger.error('Watch request failed', new Error(errorMessage));
+        } else {
+          vscode.window.showErrorMessage('Watch request failed for unknown reason');
+          Logger.error('Watch request failed', new Error('Unknown reason'));
+        }
+        return false;
+      }
+
+      // Success - show user notification
+      const totalFunctions = data.watches_requested + data.already_watching;
+      let message = `Function watch requests processed: ${totalFunctions} functions`;
+      
+      if (data.watches_requested > 0) {
+        message += ` (${data.watches_requested} new watches)`;
+      }
+      
+      if (data.already_watching > 0) {
+        message += ` (${data.already_watching} already watching)`;
+      }
+
+      vscode.window.showInformationMessage(message);
+      Logger.log(message);
+      return true;
+
+    } catch (error) {
+      Logger.error('Error requesting function watches', error instanceof Error ? error : new Error(String(error)));
+      vscode.window.showErrorMessage(`Watch request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
+    }
+  }
+
+  /**
    * Search for function calls using the /editor-events endpoint
    */
   public async searchFunctionCalls(functionNames: string[]): Promise<ServerFunctionResponse | null> {

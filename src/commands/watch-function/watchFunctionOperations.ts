@@ -22,6 +22,10 @@ export interface LoggerProvider {
   log(message: string): void;
 }
 
+export interface ApiServiceProvider {
+  requestWatch(functionNames: string[]): Promise<boolean>;
+}
+
 /**
  * Pure business logic operations with Result types
  */

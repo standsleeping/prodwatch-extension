@@ -2,11 +2,15 @@ import {
   LoginCredentials,
   LoginResponse,
   ApiConfig,
+  WatchRequest,
+  WatchResponse,
   validateLoginCredentials,
   createLoginRequest,
   createSearchRequest,
+  createWatchRequest,
   isValidLoginResponse,
   isValidServerFunctionResponse,
+  isValidWatchResponse,
   normalizeApiConfig,
   isValidFunctionNames,
   isValidAppName,
@@ -230,6 +234,131 @@ export const searchFunctionCallsOperation = async (
   }
 
   return { success: true, data: jsonResult.data };
+};
+
+// Request function watch operation
+export const requestWatchOperation = async (
+  httpClient: HttpClient,
+  authStorage: AuthStorage,
+  notifications: NotificationService,
+  config: ApiConfig,
+  functionNames: unknown,
+  appName: unknown
+): Promise<Result<WatchResponse>> => {
+  // Validate function names
+  if (!isValidFunctionNames(functionNames)) {
+    return {
+      success: false,
+      error: createApiError('Invalid function names: must be non-empty array of strings'),
+      validationErrors: ['Function names must be a non-empty array of strings']
+    };
+  }
+
+  // Validate app name
+  if (!isValidAppName(appName as string)) {
+    return {
+      success: false,
+      error: createApiError('Invalid app name: must be non-empty string'),
+      validationErrors: ['App name must be a non-empty string']
+    };
+  }
+
+  // Check authentication
+  const isAuthenticated = await authStorage.isAuthenticated();
+  if (!isAuthenticated) {
+    const error = createApiError('Authentication required to request function watches');
+    notifications.showError(error.message);
+    return { success: false, error };
+  }
+
+  const token = await authStorage.getToken();
+  if (!token) {
+    const error = createApiError('No authentication token found');
+    notifications.showError(error.message);
+    return { success: false, error };
+  }
+
+  // Create request
+  const watchRequest = createWatchRequest(functionNames as string[], appName as string);
+
+  // Make HTTP request
+  const fetchResult = await safeFetch(httpClient, `${config.baseUrl}/editor-events`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(watchRequest)
+  });
+
+  if (!fetchResult.success) {
+    const error = createApiError(`Watch request failed: ${fetchResult.error.message}`);
+    notifications.showError(error.message);
+    return fetchResult;
+  }
+
+  const response = fetchResult.data;
+
+  // Handle specific HTTP errors
+  if (!response.ok) {
+    if (isUnauthorizedStatus(response.status)) {
+      const error = createApiError('Authentication expired. Please log in again.');
+      notifications.showWarning(error.message);
+      return { success: false, error };
+    }
+
+    const error = createApiError(
+      `Watch request failed: ${response.status} ${response.statusText}`,
+      response.status
+    );
+    notifications.showError(error.message);
+    return { success: false, error };
+  }
+
+  // Parse JSON response
+  const jsonResult = await safeJsonParse<WatchResponse>(response);
+  if (!jsonResult.success) {
+    const error = createApiError('Invalid server response format');
+    notifications.showError(error.message);
+    return jsonResult;
+  }
+
+  // Validate response structure
+  if (!isValidWatchResponse(jsonResult.data)) {
+    const error = createApiError('Invalid watch response format');
+    notifications.showError(error.message);
+    return { success: false, error };
+  }
+
+  const watchResponse = jsonResult.data;
+
+  // Handle server-side errors
+  if (!watchResponse.success) {
+    if (watchResponse.errors.length > 0) {
+      const errorMessage = `Watch request failed: ${watchResponse.errors.join(', ')}`;
+      notifications.showError(errorMessage);
+      return { success: false, error: createApiError(errorMessage) };
+    } else {
+      const error = createApiError('Watch request failed for unknown reason');
+      notifications.showError(error.message);
+      return { success: false, error };
+    }
+  }
+
+  // Success - show user notification
+  const totalFunctions = watchResponse.watches_requested + watchResponse.already_watching;
+  let message = `Function watch requests processed: ${totalFunctions} functions`;
+  
+  if (watchResponse.watches_requested > 0) {
+    message += ` (${watchResponse.watches_requested} new watches)`;
+  }
+  
+  if (watchResponse.already_watching > 0) {
+    message += ` (${watchResponse.already_watching} already watching)`;
+  }
+
+  notifications.showInfo(message);
+  return { success: true, data: watchResponse };
 };
 
 // Configuration operation

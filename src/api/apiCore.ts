@@ -18,6 +18,19 @@ export interface SearchRequest {
   app_name: string;
 }
 
+export interface WatchRequest {
+  event_name: string;
+  function_names: string[];
+  app_name: string;
+}
+
+export interface WatchResponse {
+  success: boolean;
+  watches_requested: number;
+  already_watching: number;
+  errors: string[];
+}
+
 export interface ApiConfig {
   baseUrl: string;
 }
@@ -86,6 +99,14 @@ export const createSearchRequest = (functionNames: string[], appName: string): S
   };
 };
 
+export const createWatchRequest = (functionNames: string[], appName: string): WatchRequest => {
+  return {
+    event_name: "request-function-watch",
+    function_names: functionNames.filter(name => name.trim().length > 0),
+    app_name: appName
+  };
+};
+
 // Response validation
 export const isValidLoginResponse = (response: unknown): response is LoginResponse => {
   return typeof response === 'object' &&
@@ -107,6 +128,21 @@ export const isValidServerFunctionResponse = (response: unknown): response is Se
     Array.isArray(resp.function_names) &&
     typeof resp.total_calls === 'number' &&
     typeof resp.functions === 'object';
+};
+
+export const isValidWatchResponse = (response: unknown): response is WatchResponse => {
+  if (typeof response !== 'object' || response === null) { return false; }
+
+  const resp = response as any;
+  return 'success' in resp &&
+    'watches_requested' in resp &&
+    'already_watching' in resp &&
+    'errors' in resp &&
+    typeof resp.success === 'boolean' &&
+    typeof resp.watches_requested === 'number' &&
+    typeof resp.already_watching === 'number' &&
+    Array.isArray(resp.errors) &&
+    resp.errors.every((error: unknown) => typeof error === 'string');
 };
 
 // Configuration functions
