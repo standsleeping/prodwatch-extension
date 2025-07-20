@@ -1,22 +1,28 @@
 # ProdWatch VS Code Extension
 
-See function calls in production from your editor.
+See how your code is behaving in production directly in your editor. ProdWatch shows real-time function call data, execution times, and errors right alongside your code <strong>without requiring any code changes or deployments</strong>. Monitor your functions in production the same way you debug locally with full visibility into arguments, return values, and performance metrics.
 
 ## Features
 
-- **App-Scoped Monitoring**: Configure which specific app to monitor, ensuring data is filtered to your application.
-- **Production Function Monitoring**: View real-time production function call data directly in your Python code.
-- **Inline Call Counts**: See how many times each function has been called in production with CodeLens.
-- **Detailed Hover Information**: Hover over functions to see:
-  - Total number of calls.
-  - Recent function calls with actual arguments.
-  - Execution times for each call.
-  - Error information when calls fail.
-- **Automatic Data Fetching**: Production data is automatically loaded when you open or switch to Python files.
-- **Automatic Polling**: Optionally enable automatic background polling to keep function data up-to-date.
-- **Authentication**: Secure login to your ProdWatch account.
-- **Manual Data Refresh**: Refresh production data on demand for the current file.
-- **Configurable API Endpoint**: Switch between production and local development servers.
+### Production Function Monitoring
+
+View real-time production function call data directly in your Python code. Configure which specific app to monitor, ensuring data is filtered to your application.
+
+See how many times each function has been called in production with CodeLens (only shown for functions with calls). Hover over functions to see detailed information including:
+- Total number of calls
+- Recent function calls with actual arguments
+- Execution times for each call
+- Error information when calls fail
+- Watch status (Active, Pending, Failed, Not Requested)
+- **Watch Function button** to request monitoring for specific functions
+
+### Configurable Data Fetching
+
+Keep your production data up-to-date with multiple fetching options. Production data is automatically loaded when you open or switch to Python files. Optionally enable automatic background polling to keep function data continuously updated. You can also refresh production data on demand for the current file whenever needed.
+
+### Self-Hosting and Flexibility
+
+Host ProdWatch on your own infrastructure for complete control over your data. The extension supports configurable API endpoints, allowing you to switch between the hosted service at getprodwatch.com, your own self-hosted ProdWatch instance, or local development servers for testing and customization.
 
 ## Getting Started
 
@@ -92,12 +98,15 @@ When enabled, the extension will automatically refresh function data every X sec
 
 1. **Configure App**: Set the app name you want to monitor using "ProdWatch: Set App Name"
 2. **Open Python Files**: The extension automatically activates when you open Python files
-3. **View Call Counts**: Function call counts from production appear as CodeLens above each function definition (scoped to your configured app)
+3. **View Call Counts**: Function call counts from production appear as CodeLens above each function definition (only shown for functions with calls, scoped to your configured app)
 4. **Detailed Information**: Hover over any function to see:
    - Recent calls with actual parameters used in production
    - Execution time metrics
    - Error information if the function failed
-5. **Stay Updated**: Data refreshes automatically when switching between files, or enable automatic polling for real-time updates, or manually refresh on demand
+   - Watch status (Active, Pending, Failed, Mixed States, Not Requested)
+   - **Watch Function button** - click to request monitoring for functions not currently being watched
+5. **Request Function Monitoring**: Use the "Watch Function" button in hover tooltips to request monitoring for specific functions
+6. **Stay Updated**: Data refreshes automatically when switching between files, or enable automatic polling for real-time updates, or manually refresh on demand
 
 ## Requirements
 
